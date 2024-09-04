@@ -12,7 +12,6 @@
   </property>
   <property name="font">
    <font>
-    <weight>75</weight>
     <italic>false</italic>
     <bold>true</bold>
    </font>
@@ -168,7 +167,7 @@ background-color: rgb(41, 178, 190);
      <x>0</x>
      <y>0</y>
      <width>978</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuNuevo">
