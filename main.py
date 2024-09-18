@@ -12,14 +12,16 @@ class MainWindow(QMainWindow):
         self.lexer = Lexer('')
 
     def compile_handler(self):
-
-        text = self.ui.Txt_Codigo.toPlainText()
-        self.lexer.text = text
+        text = self.ui.Txt_Codigo.toPlainText()  # Obtiene el texto del editor
+        self.lexer.text = text  # Asigna el texto al lexer
+        tokens = self.lexer.tokenize()  # Tokeniza el código
         output_text = ''
-        for name, value in self.lexer.tokenize().items():
-            output_text += f'{name}: {value}\n'
-        self.ui.Txt_Salida.setText(output_text)
 
+        # Recorre la lista de tokens y los formatea
+        for token in tokens:
+            output_text += f'Tipo: {token.type}, Valor: {token.value}, Línea: {token.line}, Columna: {token.column}\n'
+
+        self.ui.Txt_Salida.setText(output_text)  # Muestra el resultado en el área de salida
 
 
 if __name__ == "__main__":
@@ -27,4 +29,3 @@ if __name__ == "__main__":
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
-

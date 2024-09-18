@@ -12,7 +12,13 @@ token_patterns = [
 
 tokens_compiled = {name:re.compile(pattern) for name, pattern in token_patterns}
 
-class Token(object):
-    def __init__(self,type,value):
-        self.type = type
+class Token:
+    def __init__(self, type_, value, line, column):
+        self.type = type_
         self.value = value
+        self.line = line
+        self.column = column
+
+    def __repr__(self):
+        return f"Token({self.type}, {self.value}, Pos({self.line}:{self.column}))"
+

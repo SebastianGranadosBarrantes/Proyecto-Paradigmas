@@ -1,24 +1,38 @@
-from Tokens import tokens_compiled
 import re
+from Tokens import tokens_compiled, Token
 
 class Lexer:
-    def __init__(self,text):
+    def __init__(self, text):
         self.text = text
         self.pos = 0
         self.actual_char = None
-        self.text_tokenize = None
-
+        self.tokens = []
 
     def tokenize(self):
-        result = {name : pattern.findall(self.text) for name, pattern in tokens_compiled.items()}
-        return result
+        lines = self.text.splitlines()  # Separa por líneas
+        for line_number, line in enumerate(lines, start=1):
+            line_pos = 0
+            while line_pos < len(line):
+                matched = False
+                for name, pattern in tokens_compiled.items():
+                    regex_match = pattern.match(line, line_pos)
+                    if regex_match:
+                        value = regex_match.group(0)
+                        if name != 'WHITESPACE':
+                            token = Token(name, value, line_number, line_pos)
+                            self.tokens.append(token)
+                        line_pos += len(value)
+                        matched = True
+                        break
 
+                if not matched:
+                    raise ValueError(f"Caracter inesperado '{line[line_pos]}' en la línea {line_number}")
+        return self.tokens
 
-
-
-
+# Probar el lexer
 if __name__ == '__main__':
-    code = 'If (number + 1 = 2)'
+    code = 'If (number + 1 = 2)\nwhile (x > 0)'
     lexer = Lexer(code)
-    for name, value in lexer.tokenize().items():
-        print(name, value)
+    tokens = lexer.tokenize()
+    for token in tokens:
+        print(token)
