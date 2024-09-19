@@ -9,7 +9,8 @@ class Lexer:
         self.tokens = []
 
     def tokenize(self):
-        lines = self.text.splitlines()  # Separa por líneas
+        lines = self.text.splitlines()
+        in_comment = False
         for line_number, line in enumerate(lines, start=1):
             line_pos = 0
             while line_pos < len(line):
@@ -18,9 +19,17 @@ class Lexer:
                     regex_match = pattern.match(line, line_pos)
                     if regex_match:
                         value = regex_match.group(0)
-                        if name != 'WHITESPACE':
+
+                        if name == 'COMMENT_START':
+                            in_comment = True
+
+                        elif name == 'COMMENT_END':
+                            in_comment = False
+
+                        elif not in_comment and name != 'WHITESPACE':
                             token = Token(name, value, line_number, line_pos)
                             self.tokens.append(token)
+
                         line_pos += len(value)
                         matched = True
                         break
@@ -28,6 +37,7 @@ class Lexer:
                 if not matched:
                     raise ValueError(f"Caracter inesperado '{line[line_pos]}' en la línea {line_number}")
         return self.tokens
+
 
 # Probar el lexer
 if __name__ == '__main__':

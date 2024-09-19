@@ -2,7 +2,7 @@
 import re
 
 token_patterns = [
-    ('KEYWORD', r'(?i)\b(if|else|while|return|function|do)\b'),
+    ('KEYWORD', r'(?i)\b(si|sino|while|returna|funcioncita|tons)\b'),
     ('IO', r'(?i)\b(lea|escriba)\b'),
     ('DATATYPE', r'(?i)\b(entero|char|bool|string|float|lista|arreglo)\b'),
     ('IDENTIFIER', r'\b[a-zA-Z_][a-zA-Z_0-9]*\b'),
@@ -15,6 +15,8 @@ token_patterns = [
     ('OPERATOR', r'[+\-*/]'),
     ('LOGICAL_OPERATOR', r'(?i)\b(and|or|not)\b'),
     ('DELIMETER', r'[(),;{}]|\[\]'),
+    ('COMMENT_START', r'-\*'),
+    ('COMMENT_END', r'\*-'),
     ('WHITESPACE', r'\s+'),
     ('UNKNOWN', r'.'),
 ]
