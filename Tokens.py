@@ -2,13 +2,24 @@
 import re
 
 token_patterns = [
-    ('KEYWORD',r'(?i)\b(if|else|while|return|function|do)\b'),
-    ('IDENTIFIER',r'\b[a-zA-Z_][a-zA-Z_0-9]*\b'),
-    ('NUMBER',r'[+-]?(\d*\.\d+|\d+\.\d*|\d+)'),
-    ('OPERATOR',r'[+\-*=]'),
-    ('DELIMETER',r'[(),;{}]'),
-    ('WHITESPACE',r'\s+'),
-    ('UNKNOWN',r'.'),]
+    ('KEYWORD', r'(?i)\b(if|else|while|return|function|do)\b'),
+    ('IO', r'(?i)\b(lea|escriba)\b'),
+    ('DATATYPE', r'(?i)\b(entero|char|bool|string|float|lista|arreglo)\b'),
+    ('IDENTIFIER', r'\b[a-zA-Z_][a-zA-Z_0-9]*\b'),
+    ('NUMBER', r'[+-]?(\d*\.\d+|\d+\.\d*|\d+)'),
+    ('CHAR', r"'.'"),
+    ('BOOLEAN', r'(?i)\b(true|false)\b'),
+    ('STRING', r'"[^"]*"'),
+    ('ASSIGNMENT', r'='),
+    ('COMPARATOR', r'(<>|==|>=|<=|>|<)'),
+    ('OPERATOR', r'[+\-*/]'),
+    ('LOGICAL_OPERATOR', r'(?i)\b(and|or|not)\b'),
+    ('DELIMETER', r'[(),;{}]|\[\]'),
+    ('WHITESPACE', r'\s+'),
+    ('UNKNOWN', r'.'),
+]
+
+
 
 tokens_compiled = {name:re.compile(pattern) for name, pattern in token_patterns}
 
