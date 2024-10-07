@@ -29,15 +29,19 @@ class Parser:
         counter = 1
         self.tree = []
         while self.current_token is not None:
+            print('El current token es ', self.current_token)
             print('Iteración del ciclo numero', counter)
-            if self.current_token.type == 'FUNCTION' and self.current_token.value.lower() == 'funcioncita':
-                self.tree.append(self.parse_funcion())
+            if self.current_token.type == 'FUNCTION' :
+                self.tree.append(self.parse_function())
+            elif self.current_token.type == 'PROCEDURE' :
+                self.tree.append(self.parse_procedure())
             else:
+                print('No esta pasando de aqui')
                 raise SyntaxError(f"Token inesperado {self.current_token.value}")
             counter += 1
 
 
-    def parse_funcion(self):
+    def parse_function(self):
         self.expect('FUNCTION', 'funcioncita')
         nombre_funcion = self.parse_identificador()
         self.expect('DELIMETER', '(')
@@ -46,21 +50,34 @@ class Parser:
         self.expect('DELIMETER', ':')
         type_return = self.parse_type_return()
         self.expect('DELIMETER', "{")
-        cuerpo_funcion = self.parse_function_body()
+        cuerpo_funcion = self.parse_function_procedure_body('funcioncita')
         self.expect('DELIMETER', "}")
 
         return 'function', nombre_funcion, parametros, type_return, cuerpo_funcion
 
+    def parse_procedure(self):
+        self.expect('PROCEDURE')
+        prc_name = self.current_token.value
+        self.expect('IDENTIFIER')
+        self.expect('DELIMETER','(')
+        parameters = self.parse_parametros()
+        self.expect('DELIMETER', ')')
+        self.expect('DELIMETER', '{')
+        prc_body = self.parse_function_procedure_body('PROCEDURE')
+        self.expect('DELIMETER', '}')
+        return 'procedure', prc_name, parameters, prc_body
+
+
     def parse_parametros(self):
         parametros = []
-        if self.current_token.type != 'DELIMETER' or self.current_token.value != ')':  # Si no es un cierre inmediato
+        if self.current_token.type != 'DELIMETER' or self.current_token.value != ')':
             while True:
-                type_parametro = self.parse_type_return()  # Parseamos el type del parámetro
-                nombre_parametro = self.parse_identificador()  # Parseamos el nombre del parámetro
-                parametros.append((type_parametro, nombre_parametro))  # Añadimos el parámetro a la lista
+                type_parametro = self.parse_type_return()
+                nombre_parametro = self.parse_identificador()
+                parametros.append((type_parametro, nombre_parametro))
                 if self.current_token.type == 'DELIMETER' and self.current_token.value == ')':
-                    break  # Terminamos la lista de parámetros
-                self.expect('DELIMETER')  # Esperamos "," entre parámetros
+                    break
+                self.expect('DELIMETER')
         return parametros
 
     def parse_identificador(self):
@@ -81,7 +98,7 @@ class Parser:
             print('Entra al else')
             raise SyntaxError(f"Se esperaba un type de retorno, pero se encontró {self.current_token}")
 
-    def parse_function_body(self):
+    def parse_function_procedure_body(self, type):
         statements = []
         open_braces = 1
         while open_braces > 0:
@@ -92,10 +109,11 @@ class Parser:
             elif self.current_token.type == 'DELIMETER' and self.current_token.value == '}':
                 open_braces -= 1
                 if open_braces == 0:
-                    print('Termino el function body')
                     break
 
             elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'retorna':
+                if type != "funcioncita":
+                    raise SyntaxError(f"NO puede haber un procedure con return")
                 self.advance()
                 valor_retorno = self.parse_valor_o_variable()
                 print('El token actual es', self.current_token)
@@ -331,6 +349,9 @@ class Parser:
             return 'input', var_save
         else:
             raise SyntaxError(f"Se esperaba un argumento valido pero se encontro {self.current_token}")
+
+
+
 
 #if __name__ == "__main__":
  #   code = 'print("Hello World")'
