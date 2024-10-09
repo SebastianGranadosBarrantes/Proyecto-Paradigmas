@@ -22,7 +22,6 @@ class Lexer:
                             in_comment = True
 
                         elif name == 'COMMENT_END':
-                            print
                             in_comment = False
 
                         elif not in_comment and name != 'WHITESPACE':

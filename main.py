@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow
+from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox
 from IDEController import Ui_MainWindow
 from lexer import Lexer
 from _parser import Parser
@@ -15,21 +15,24 @@ class MainWindow(QMainWindow):
 
     def compile_handler(self):
         text = self.ui.Txt_Codigo.toPlainText()
-        self.lexer.text = text
-        tokens = self.lexer.tokenize()
-        output_text = ''
-        self.parser = Parser(tokens)
-        print(self.parser.tokens)
-        try:
-            self.parser.parse()
-        except SyntaxError as e:
-            print(e)
-        except Exception as e:
-            print(f"Ocurrio un error al momento de parsear ${e}")
-        #for token in tokens:
-         #   output_text += f'Tipo: {token.type}, Valor: {token.value}, Línea: {token.line}, Columna: {token.column}\n'
-        self.ui.Txt_Salida.setText(output_text)
-        print('El resultado es:', self.parser.tree)
+        if text == "":
+            QMessageBox.warning(self, 'Advertencia', '¡Se esta intentando compilar cuando no hay código que compilar!')
+        else:
+            self.lexer.text = text
+            tokens = self.lexer.tokenize()
+            output_text = ''
+            self.parser = Parser(tokens)
+            print(self.parser.tokens)
+            try:
+                self.parser.parse()
+            except SyntaxError as e:
+                print(e)
+            except Exception as e:
+                print(f"Ocurrio un error al momento de parsear ${e}")
+            #for token in tokens:
+             #   output_text += f'Tipo: {token.type}, Valor: {token.value}, Línea: {token.line}, Columna: {token.column}\n'
+            self.ui.Txt_Salida.setText(output_text)
+            print('El resultado es:', self.parser.tree)
 
 
 if __name__ == "__main__":
