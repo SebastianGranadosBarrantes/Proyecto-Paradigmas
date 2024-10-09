@@ -7,6 +7,7 @@ class Parser:
         self.conditional_stack = []
         self.tree = None
         self.in_function = False
+        self.function_name = ""
 
     def advance(self):
         self.pos += 1
@@ -31,9 +32,9 @@ class Parser:
         while self.current_token is not None:
             print('El current token es ', self.current_token)
             print('Iteración del ciclo numero', counter)
-            if self.current_token.type == 'FUNCTION' :
+            if self.current_token.type == 'FUNCTION':
                 self.tree.append(self.parse_function())
-            elif self.current_token.type == 'PROCEDURE' :
+            elif self.current_token.type == 'PROCEDURE':
                 self.tree.append(self.parse_procedure())
             else:
                 print('No esta pasando de aqui')
@@ -43,39 +44,43 @@ class Parser:
     def parse_function(self):
         self.expect('FUNCTION', 'funcioncita')
         self.in_function = True
-        nombre_funcion = self.parse_identificador()
-        self.verify_in_symbols_table(nombre_funcion, 'global')
-        self.symbols_table[nombre_funcion] = nombre_funcion
+        function_name = self.parse_identificador()
+        self.function_name = function_name
+        self.verify_in_symbols_table(function_name, 'global')
         self.expect('DELIMETER', '(')
-        parametros = self.parse_parametros()
-        for type, name in parametros:
-            self.verify_in_symbols_table(name, type)
+        parameters = self.parse_parameters()
+        for _type, name in parameters:
+            self.verify_in_symbols_table(name, _type)
 
         self.expect('DELIMETER', ')')
         self.expect('DELIMETER', ':')
         type_return = self.parse_type_return()
+        self.symbols_table[function_name] = {"type": "function", "data_type": type_return, "scope": "Global", "parameters": parameters}
         self.expect('DELIMETER', "{")
         cuerpo_funcion = self.parse_function_procedure_body('funcioncita')
         self.expect('DELIMETER', "}")
         self.in_function = False
-        return 'function', nombre_funcion, parametros, type_return, cuerpo_funcion
+        self.function_name = ""
+        return 'function', function_name, parameters, type_return, cuerpo_funcion
 
     def parse_procedure(self):
         self.expect('PROCEDURE')
         self.in_function = True
         prc_name = self.current_token.value
+        self.function_name = prc_name
         self.expect('IDENTIFIER')
-        self.expect('DELIMETER','(')
-        parameters = self.parse_parametros()
+        self.expect('DELIMETER', '(')
+        parameters = self.parse_parameters()
         self.expect('DELIMETER', ')')
         self.expect('DELIMETER', '{')
         prc_body = self.parse_function_procedure_body('PROCEDURE')
         self.expect('DELIMETER', '}')
         self.in_function = False
+        self.function_name = ""
+        self.symbols_table[prc_name] = {"type": "procedure", "scope": "Global", "parameters": parameters}
         return 'procedure', prc_name, parameters, prc_body
 
-
-    def parse_parametros(self):
+    def parse_parameters(self):
         parametros = []
         if self.current_token.type != 'DELIMETER' or self.current_token.value != ')':
             while True:
@@ -105,7 +110,7 @@ class Parser:
             print('Entra al else')
             raise SyntaxError(f"Se esperaba un type de retorno, pero se encontró {self.current_token}")
 
-    def parse_function_procedure_body(self, type):
+    def parse_function_procedure_body(self, _type):
         statements = []
         open_braces = 1
         while open_braces > 0:
@@ -119,7 +124,7 @@ class Parser:
                     break
 
             elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'retorna':
-                if type != "funcioncita":
+                if _type != "funcioncita":
                     raise SyntaxError(f"NO puede haber un procedure con return")
                 self.advance()
                 valor_retorno = self.parse_valor_o_variable()
@@ -137,26 +142,27 @@ class Parser:
         self.expect('DATATYPE')
         identifier = self.parse_identificador()
         if identifier in self.symbols_table:
-            raise SyntaxError(f"La variable {identifier} ya existe!") #aqui me quede, estoy debatiendo lo del scope de una variable
+            raise SyntaxError(f"La variable {identifier} ya existe!")  # aqui me quede, estoy debatiendo lo del scope de una variable
 
         if self.current_token.type == 'ASSIGNMENT':
             self.expect('ASSIGNMENT')
             value = self.current_token.value
-            print('El valor de la salida de la funcion es ', data_type, identifier,value)
+            print('El valor de la salida de la funcion es ', data_type, identifier, value)
             if self.in_function:
-                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "local", "value": value}
+                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": self.function_name, "value": value}
             else:
                 self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "global", "value": value}
             return data_type, identifier, value
         else:
             if self.in_function:
-                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "local", "value": ""}
+                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": self.function_name, "value": ""}
             else:
                 self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "global", "value": ""}
-            print('El valor de la salida de la funcion es ', data_type, identifier)
+            print('El valor de la salida de la función es ', data_type, identifier)
             return data_type, identifier
 
-        #cada una de las lineas del body
+        # cada una de las lineas del body
+
     def parse_statement(self):
         if self.current_token.type == 'IDENTIFIER':
             sta_name = self.current_token.value
@@ -172,7 +178,8 @@ class Parser:
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'sino':
             if self.conditional_stack[-1]:
                 return self.parse_if_elif()
-            raise SyntaxError(f"Sentencia inesperada {self.current_token.value} en la línea {self.current_token.line} no se puede hacer un sino sin si")
+            raise SyntaxError(
+                f"Sentencia inesperada {self.current_token.value} en la línea {self.current_token.line} no se puede hacer un sino sin si")
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'tons':
             if self.conditional_stack[-1]:
                 return self.parse_else()
@@ -249,7 +256,8 @@ class Parser:
             self.advance()
             return value
         else:
-            raise SyntaxError(f"Se esperaba un IDENTIFIER, NUMBER, STRING o BOOLEAN, pero se encontró {self.current_token}")
+            raise SyntaxError(
+                f"Se esperaba un IDENTIFIER, NUMBER, STRING o BOOLEAN, pero se encontró {self.current_token}")
 
     def parse_if_elif(self):
         conditional_type = self.current_token.value
@@ -257,7 +265,7 @@ class Parser:
         self.expect('DELIMETER', '(')
         condition = self.parse_condition()
         self.expect('DELIMETER', ')')
-        self.expect('DELIMETER','{')
+        self.expect('DELIMETER', '{')
         body = []
         open_braces = 1
         while open_braces > 0:
@@ -327,11 +335,12 @@ class Parser:
             else:
                 raise SyntaxError(f"Se esperaba un comparador, pero se encontró {self.current_token}")
         else:
-            raise SyntaxError(f"Se esperaba un identificador o número al principio de la condición, pero se encontró {self.current_token}")
+            raise SyntaxError(
+                f"Se esperaba un identificador o número al principio de la condición, pero se encontró {self.current_token}")
 
     def parse_io_print(self):
         arguments = []
-        self.expect('IO','escriba')
+        self.expect('IO', 'escriba')
         self.expect('DELIMETER', '(')
         while self.current_token.type != 'DELIMETER' or self.current_token.value != ')':
             if self.current_token.type == 'STRING':
@@ -371,6 +380,6 @@ class Parser:
         if symbol_name in self.symbols_table and scope == 'local':
             raise SyntaxError(f"El objeto {symbol_name} ya existe!")
 
-#if __name__ == "__main__":
- #   code = 'print("Hello World")'
-  #  parser = Parser()
+# if __name__ == "__main__":
+#   code = 'print("Hello World")'
+#  parser = Parser()

@@ -33,6 +33,7 @@ class MainWindow(QMainWindow):
              #   output_text += f'Tipo: {token.type}, Valor: {token.value}, Línea: {token.line}, Columna: {token.column}\n'
             self.ui.Txt_Salida.setText(output_text)
             print('El resultado es:', self.parser.tree)
+            print(f"La siguiente es la tabla de simbolos \n{self.parser.symbols_table}")
 
 
 if __name__ == "__main__":
