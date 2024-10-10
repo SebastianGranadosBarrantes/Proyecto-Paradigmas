@@ -36,6 +36,8 @@ class Parser:
                 self.tree.append(self.parse_function())
             elif self.current_token.type == 'PROCEDURE':
                 self.tree.append(self.parse_procedure())
+            elif self.current_token.type == 'MAIN':
+                self.tree.append(self.parse_main())
             else:
                 print('No esta pasando de aqui')
                 raise SyntaxError(f"Token inesperado {self.current_token.value}")
@@ -114,7 +116,6 @@ class Parser:
         statements = []
         open_braces = 1
         while open_braces > 0:
-            print('El valor actual del token es ', self.current_token)
             if self.current_token.type == 'DELIMETER' and self.current_token.value == '{':
                 open_braces += 1
                 self.advance()
@@ -128,13 +129,10 @@ class Parser:
                     raise SyntaxError(f"NO puede haber un procedure con return")
                 self.advance()
                 valor_retorno = self.parse_valor_o_variable()
-                print('El token actual es', self.current_token)
                 statements.append(('retorna', valor_retorno))
             else:
                 statement = self.parse_statement()
-                print('El valor del token despues de entrar a statement es ', self.current_token)
                 statements.append(statement)
-        print('El token actual es', self.current_token)
         return 'function_body', statements
 
     def parse_var_def(self):
@@ -142,28 +140,28 @@ class Parser:
         self.expect('DATATYPE')
         identifier = self.parse_identificador()
         if identifier in self.symbols_table:
-            raise SyntaxError(f"La variable {identifier} ya existe!")  # aqui me quede, estoy debatiendo lo del scope de una variable
+            raise SyntaxError(f"La variable {identifier} ya existe!")
 
         if self.current_token.type == 'ASSIGNMENT':
-            self.expect('ASSIGNMENT')
+            self.advance()
             value = self.current_token.value
-            print('El valor de la salida de la funcion es ', data_type, identifier, value)
             if self.in_function:
                 self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": self.function_name, "value": value}
             else:
                 self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "global", "value": value}
+            self.advance()
             return data_type, identifier, value
         else:
             if self.in_function:
                 self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": self.function_name, "value": ""}
             else:
                 self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "global", "value": ""}
-            print('El valor de la salida de la función es ', data_type, identifier)
             return data_type, identifier
 
         # cada una de las lineas del body
 
     def parse_statement(self):
+        print('El token con el que entra al parse statement es ', self.current_token)
         if self.current_token.type == 'IDENTIFIER':
             sta_name = self.current_token.value
             self.advance()
@@ -178,19 +176,23 @@ class Parser:
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'sino':
             if self.conditional_stack[-1]:
                 return self.parse_if_elif()
-            raise SyntaxError(
-                f"Sentencia inesperada {self.current_token.value} en la línea {self.current_token.line} no se puede hacer un sino sin si")
+            raise SyntaxError(f"Sentencia inesperada {self.current_token.value} en la línea {self.current_token.line} no se puede hacer un sino sin si")
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'tons':
             if self.conditional_stack[-1]:
                 return self.parse_else()
-            raise SyntaxError(
-                f"Sentencia inesperada {self.current_token.value} en la línea {self.current_token.line} no se puede hacer un tons sin si")
+            raise SyntaxError(f"Sentencia inesperada {self.current_token.value} en la línea {self.current_token.line} no se puede hacer un tons sin si")
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'retorna':
             self.advance()
             return_value = self.current_token.value
             print("el valor de retorna es ", return_value)
             self.advance()
             return 'retorna', return_value
+        elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'mientras':
+            self.advance()
+            self.parse_while()
+        elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'haga':
+            self.advance()
+            self.parse_for()
         elif self.current_token.type == 'IO' and self.current_token.value.lower() == 'escriba':
             return self.parse_io_print()
         elif self.current_token.type == 'IO' and self.current_token.value.lower() == 'lea':
@@ -274,13 +276,11 @@ class Parser:
                 open_braces -= 1
                 self.advance()
                 if open_braces == 0:
-                    print('Termino el while')
                     break
             elif self.current_token.type == 'DELIMETER' and self.current_token.value == '{':
                 open_braces += 1
                 self.advance()
             else:
-                print('si entra')
                 statement = self.parse_statement()
                 body.append(statement)
         if conditional_type.lower() == 'si':
@@ -379,6 +379,106 @@ class Parser:
     def verify_in_symbols_table(self, symbol_name, scope):
         if symbol_name in self.symbols_table and scope == 'local':
             raise SyntaxError(f"El objeto {symbol_name} ya existe!")
+
+    def parse_main(self):
+        self.advance()
+        self.expect('DELIMETER', '(')
+        self.expect('DELIMETER', ')')
+        self.expect('DELIMETER', '{')
+        main_body = self.parse_main_o_loop_body()
+        self.expect('DELIMETER', '}')
+        return 'main', main_body
+
+    def parse_main_o_loop_body(self):
+        open_braces = 1
+        statements = []
+        while open_braces > 0:
+            if self.current_token.type == 'DELIMETER' and self.current_token.value == '}':
+                open_braces -= 1
+                self.advance()
+            elif self.current_token.type == 'DELIMETER' and self.current_token.value == '{':
+                open_braces += 1
+                self.advance()
+            else:
+                statement = self.parse_statement()
+                statements.append(statement)
+
+            return 'main_body', statements
+
+    def parse_while(self):
+        print('El token con el que entra a parse while es ', self.current_token)
+        self.expect('DELIMETER', '(')
+        condition = self.parse_condition()
+        self.expect('DELIMETER', ')')
+        self.expect('DELIMETER', '{')
+        while_body = self.parse_main_o_loop_body()
+        self.expect('DELIMETER', '}')
+        return 'while',condition, while_body
+
+    def parse_for_condition(self):
+        var_for = self.current_token.value
+        self.expect('IDENTIFIER')
+        self.expect('ASSIGNMENT')
+        var_ini = self.current_token.value
+        self.expect('NUMBER')
+
+        self.expect('DELIMETER', ',')
+        if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
+            val1 = self.current_token.value
+            self.advance()
+            if self.current_token.type == 'COMPARATOR':
+                comparator = self.current_token.value
+                self.advance()
+                if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
+                    val2 = self.current_token.value  # Segundo valor (ej. 10)
+                    self.advance()
+                    condition_node = ('comparison', val1, comparator, val2)
+                else:
+                    raise SyntaxError(f"Se esperaba un número o identificador en la condición del for.")
+            else:
+                raise SyntaxError(f"Se esperaba un comparador en la condición del for.")
+
+        self.expect('DELIMETER', ',')  # Coma que separa la condición del incremento/decremento
+
+        # Incremento o decremento (se espera algo como i++ o i = i + 1)
+        incremento_var = self.current_token.value  # La variable del incremento (ej. i)
+        self.expect('IDENTIFIER')
+        if self.current_token.type == 'OPERATOR' and self.current_token.value == '+':
+            self.advance()
+            if self.current_token.value == '+':
+                self.advance()  # Esto sería para un incremento como i++
+                incremento_node = ('incremento', incremento_var, '++')
+            else:
+                self.expect('ASSIGNMENT')
+                increment_value = self.current_token.value
+                self.advance()
+                incremento_node = ('incremento', incremento_var, '+', increment_value)
+        elif self.current_token.type == 'OPERATOR' and self.current_token.value == '-':
+            self.advance()
+            if self.current_token.value == '-':
+                self.advance()  # Esto sería para un decremento como i--
+                incremento_node = ('decremento', incremento_var, '--')
+            else:
+                self.expect('ASSIGNMENT')
+                decrement_value = self.current_token.value
+                self.advance()
+                incremento_node = ('decremento', incremento_var, '-', decrement_value)
+        else:
+            raise SyntaxError(f"Se esperaba un incremento o decremento en el for.")
+
+        return {'initialization': (var_for, '=', var_ini),'condition': condition_node,'increment': incremento_node}
+
+
+    def parse_for(self):
+        print('El token con el que entra a parse for for es ', self.current_token)
+        self.expect('DELIMETER', '(')
+        condition = self.parse_for_condition()
+        self.expect('DELIMETER', ')')
+        self.expect('DELIMETER', '{')
+        for_body = self.parse_main_o_loop_body()
+        self.expect('DELIMETER', '}')
+        return 'for',condition, for_body
+
 
 # if __name__ == "__main__":
 #   code = 'print("Hello World")'
