@@ -8,6 +8,7 @@ class Lexer:
         self.tokens = []
 
     def tokenize(self):
+        self.tokens = []
         lines = self.text.splitlines()
         in_comment = False
         for line_number, line in enumerate(lines, start=1):

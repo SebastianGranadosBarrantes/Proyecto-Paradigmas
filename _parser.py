@@ -8,6 +8,7 @@ class Parser:
         self.tree = None
         self.in_function = False
         self.function_name = ""
+        self.already_main = False
 
     def advance(self):
         self.pos += 1
@@ -36,13 +37,14 @@ class Parser:
                 self.tree.append(self.parse_function())
             elif self.current_token.type == 'PROCEDURE':
                 self.tree.append(self.parse_procedure())
-            elif self.current_token.type == 'MAIN':
+            elif self.current_token.type == 'MAIN' and self.already_main != True:
+                self.already_main = True
                 self.tree.append(self.parse_main())
             else:
-                print('No esta pasando de aqui')
                 raise SyntaxError(f"Token inesperado {self.current_token.value}")
             counter += 1
-
+        if self.already_main == False:
+            raise SyntaxError(f"En el código proporcionado falta el main")
     def parse_function(self):
         self.expect('FUNCTION', 'funcioncita')
         self.in_function = True
@@ -103,7 +105,6 @@ class Parser:
             raise SyntaxError(f"Se esperaba un IDENTIFIER, pero se encontró {self.current_token}")
 
     def parse_type_return(self):
-        """Parsea el type de retorno"""
         if self.current_token.type == 'DATATYPE':
             type_r = self.current_token.value
             self.advance()
@@ -351,11 +352,9 @@ class Parser:
                     next_condition = self.parse_condition()
                     return 'logical_expression', condition_node, log_op, next_condition
                 return condition_node
-
             else:
                 raise SyntaxError(
                     f"Se esperaba un identificador, número o paréntesis después del comparador, pero se encontró {self.current_token}")
-
         elif self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
             self.advance()
             nested_condition = self.parse_condition()
