@@ -161,7 +161,6 @@ class Parser:
         # cada una de las lineas del body
 
     def parse_statement(self):
-        print('El token con el que entra al parse statement es ', self.current_token)
         if self.current_token.type == 'IDENTIFIER':
             sta_name = self.current_token.value
             self.advance()
@@ -172,12 +171,15 @@ class Parser:
         elif self.current_token.type == 'DATATYPE':
             return self.parse_var_def()
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'si':
+            print('entra al if')
             return self.parse_if_elif()
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'sino':
             if self.conditional_stack[-1]:
                 return self.parse_if_elif()
             raise SyntaxError(f"Sentencia inesperada {self.current_token.value} en la línea {self.current_token.line} no se puede hacer un sino sin si")
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'tons':
+            print('entra al else')
+            print('el conditional stack es ', self.conditional_stack)
             if self.conditional_stack[-1]:
                 return self.parse_else()
             raise SyntaxError(f"Sentencia inesperada {self.current_token.value} en la línea {self.current_token.line} no se puede hacer un tons sin si")
@@ -194,9 +196,10 @@ class Parser:
             self.advance()
             self.parse_for()
         elif self.current_token.type == 'IO' and self.current_token.value.lower() == 'escriba':
+            print('entra al escriba')
             return self.parse_io_print()
         elif self.current_token.type == 'IO' and self.current_token.value.lower() == 'lea':
-            return self.parse_io_lea()
+            return self.parse_io_read()
         else:
             print('Se va al else')
             raise SyntaxError(f"Sentencia inesperada {self.current_token.value} en la línea {self.current_token.line}")
@@ -266,12 +269,13 @@ class Parser:
         self.advance()
         self.expect('DELIMETER', '(')
         condition = self.parse_condition()
+        print('El condition que retorna es ', condition)
         self.expect('DELIMETER', ')')
+        print('despues de que se callera ')
         self.expect('DELIMETER', '{')
         body = []
         open_braces = 1
         while open_braces > 0:
-            print('El valor actual del toquen en el while es ', self.current_token)
             if self.current_token.type == 'DELIMETER' and self.current_token.value == '}':
                 open_braces -= 1
                 self.advance()
@@ -284,7 +288,8 @@ class Parser:
                 statement = self.parse_statement()
                 body.append(statement)
         if conditional_type.lower() == 'si':
-            if self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'sino':
+
+            if self.current_token.type == 'KEYWORD' and (self.current_token.value.lower() == 'sino' or self.current_token.value.lower() == 'tons'):
                 self.conditional_stack.append(True)
             return 'if', condition, body
         else:
@@ -298,8 +303,10 @@ class Parser:
         open_braces = 1
         while open_braces > 0:
             if self.current_token.type == 'DELIMETER' and self.current_token.value == '}':
+                print('El valor actual del toquen antes del advance ', self.current_token)
                 open_braces -= 1
                 self.advance()
+                print('El valor actual del toquen después del advance es ', self.current_token)
                 if open_braces == 0:
                     break
             elif self.current_token.type == 'DELIMETER' and self.current_token.value == '{':
@@ -310,30 +317,44 @@ class Parser:
                 body.append(statement)
 
         self.conditional_stack.pop()
+        print('vamos a salir del else')
         return 'else', body
 
     def parse_condition(self):
         if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
             value1 = self.current_token.value
             self.advance()
-            if self.current_token.type == 'COMPARATOR':
-                comparator = self.current_token.value
+            comparator = self.current_token.value
+            self.expect('COMPARATOR')
+            if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
+                value2 = self.current_token.value
                 self.advance()
-                if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
-                    value2 = self.current_token.value
+                print('El token actual en parse condition es ', self.current_token)
+                condition_node = ('comparison', value1, comparator, value2)
+                if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
+                    log_op = self.current_token.value
                     self.advance()
-                    condition_node = ('comparison', value1, comparator, value2)
-                    if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
-                        log_op = self.current_token.value
-                        self.advance()
-                        next_condition = self.parse_condition()
-                        return 'logical_expression', condition_node, log_op, next_condition
-                    return condition_node
-                else:
-                    raise SyntaxError(
-                        f"Se esperaba un identificador o número después del comparador, pero se encontró {self.current_token}")
+                    next_condition = self.parse_condition()
+                    return 'logical_expression', condition_node, log_op, next_condition
+                return condition_node
+
+            elif self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
+                self.advance()
+                nested_condition = self.parse_condition()
+                self.expect('DELIMETER')
+                condition_node = ('comparison', value1, comparator, nested_condition)
+
+                if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
+                    log_op = self.current_token.value
+                    self.advance()
+                    next_condition = self.parse_condition()
+                    return 'logical_expression', condition_node, log_op, next_condition
+                return condition_node
+
             else:
-                raise SyntaxError(f"Se esperaba un comparador, pero se encontró {self.current_token}")
+                raise SyntaxError(
+                    f"Se esperaba un identificador, número o paréntesis después del comparador, pero se encontró {self.current_token}")
+
         else:
             raise SyntaxError(
                 f"Se esperaba un identificador o número al principio de la condición, pero se encontró {self.current_token}")
@@ -349,7 +370,7 @@ class Parser:
                 arguments.append(self.current_token.value)
             elif self.current_token.type == 'IDENTIFIER':
                 arguments.append(self.current_token.value)
-            elif self.current_token.type == 'KEYWORD' and self.current_token.value == 'salto':
+            elif self.current_token.type == 'NEWLINE' and self.current_token.value == 'salto':
                 arguments.append(self.current_token.value)
             else:
                 raise SyntaxError(f"Se esperaba un argumento valido pero se encontro {self.current_token}")
@@ -365,7 +386,7 @@ class Parser:
         self.expect('DELIMETER', ')')
         return 'print', arguments
 
-    def parse_io_lea(self):
+    def parse_io_read(self):
         self.advance()
         self.expect('DELIMETER', '(')
         if self.current_token.type == 'IDENTIFIER':
