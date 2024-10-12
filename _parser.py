@@ -326,11 +326,12 @@ class Parser:
             self.advance()
             comparator = self.current_token.value
             self.expect('COMPARATOR')
+
             if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
                 value2 = self.current_token.value
                 self.advance()
-                print('El token actual en parse condition es ', self.current_token)
                 condition_node = ('comparison', value1, comparator, value2)
+
                 if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
                     log_op = self.current_token.value
                     self.advance()
@@ -340,8 +341,8 @@ class Parser:
 
             elif self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
                 self.advance()
-                nested_condition = self.parse_condition()
-                self.expect('DELIMETER')
+                nested_condition = self.parse_condition()  # Llama recursivamente para procesar la sub-expresión
+                self.expect('DELIMETER')  # Espera un delimitador de cierre ')'
                 condition_node = ('comparison', value1, comparator, nested_condition)
 
                 if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
@@ -355,9 +356,20 @@ class Parser:
                 raise SyntaxError(
                     f"Se esperaba un identificador, número o paréntesis después del comparador, pero se encontró {self.current_token}")
 
+        elif self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
+            self.advance()
+            nested_condition = self.parse_condition()
+            self.expect('DELIMETER')
+            if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
+                log_op = self.current_token.value
+                self.advance()
+                next_condition = self.parse_condition()
+                return 'logical_expression', nested_condition, log_op, next_condition
+            return nested_condition
+
         else:
             raise SyntaxError(
-                f"Se esperaba un identificador o número al principio de la condición, pero se encontró {self.current_token}")
+                f"Se esperaba un identificador, número o paréntesis al principio de la condición, pero se encontró {self.current_token}")
 
     def parse_io_print(self):
         arguments = []
