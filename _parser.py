@@ -15,7 +15,7 @@ class Parser:
         if self.pos < len(self.tokens):
             self.current_token = self.tokens[self.pos]
         else:
-            self.current_token = None  # Fin de los tokens
+            self.current_token = None
 
     def expect(self, token_type, token_value=None):
         if self.current_token and self.current_token.type == token_type:
@@ -43,8 +43,9 @@ class Parser:
             else:
                 raise SyntaxError(f"Token inesperado {self.current_token.value}")
             counter += 1
-        if self.already_main == False:
+        if not self.already_main:
             raise SyntaxError(f"En el código proporcionado falta el main")
+
     def parse_function(self):
         self.expect('FUNCTION', 'funcioncita')
         self.in_function = True
@@ -59,7 +60,8 @@ class Parser:
         self.expect('DELIMETER', ')')
         self.expect('DELIMETER', ':')
         type_return = self.parse_type_return()
-        self.symbols_table[function_name] = {"type": "function", "data_type": type_return, "scope": "Global", "parameters": parameters}
+        self.symbols_table[function_name] = {"type": "function", "data_type": type_return, "scope": "Global",
+                                             "parameters": parameters}
         self.expect('DELIMETER', "{")
         cuerpo_funcion = self.parse_function_procedure_body('funcioncita')
         self.expect('DELIMETER', "}")
@@ -148,15 +150,19 @@ class Parser:
         if self.current_token.type == 'ASSIGNMENT':
             value = self.parse_asignacion(identifier)
             if self.in_function:
-                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": self.function_name, "value": value}
+                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type,
+                                                  "scope": self.function_name, "value": value}
             else:
-                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "global", "value": value}
+                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "global",
+                                                  "value": value}
             return data_type, identifier, value
         else:
             if self.in_function:
-                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": self.function_name, "value": ""}
+                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type,
+                                                  "scope": self.function_name, "value": ""}
             else:
-                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "global", "value": ""}
+                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "global",
+                                                  "value": ""}
             return data_type, identifier
 
         # cada una de las lineas del body
@@ -180,17 +186,18 @@ class Parser:
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'sino':
             if self.conditional_stack[-1]:
                 return self.parse_if_elif()
-            raise SyntaxError(f"Sentencia inesperada {self.current_token.value} en la línea {self.current_token.line} no se puede hacer un sino sin si")
+            raise SyntaxError(
+                f"Sentencia inesperada {self.current_token.value} en la línea {self.current_token.line} no se puede "
+                f"hacer un sino sin si")
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'tons':
-            print('entra al else')
-            print('el conditional stack es ', self.conditional_stack)
             if self.conditional_stack[-1]:
                 return self.parse_else()
-            raise SyntaxError(f"Sentencia inesperada {self.current_token.value} en la línea {self.current_token.line} no se puede hacer un tons sin si")
+            raise SyntaxError(
+                f"Sentencia inesperada {self.current_token.value} en la línea {self.current_token.line} no se puede "
+                f"hacer un tons sin si")
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'retorna':
             self.advance()
             return_value = self.current_token.value
-            print("el valor de retorna es ", return_value)
             self.advance()
             return 'retorna', return_value
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'mientras':
@@ -200,7 +207,6 @@ class Parser:
             self.advance()
             self.parse_for()
         elif self.current_token.type == 'IO' and self.current_token.value.lower() == 'escriba':
-            print('entra al escriba')
             return self.parse_io_print()
         elif self.current_token.type == 'IO' and self.current_token.value.lower() == 'lea':
             return self.parse_io_read()
@@ -220,7 +226,7 @@ class Parser:
     def parse_function_call(self, function_name):
         self.expect('DELIMETER', '(')
         arguments = self.parse_arguments_pass()
-        self.expect('DELIMETER',')')
+        self.expect('DELIMETER', ')')
         print('El token que va a salir es ', self.current_token)
         return 'llamada_funcion', function_name, arguments
 
@@ -253,11 +259,11 @@ class Parser:
             operator = self.current_token.value
             self.advance()
             if self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
-                self.advance()  # Saltamos el '('
+                self.advance()
                 right_value = self.parse_expresion()
-                self.expect('DELIMETER', ')')  # Esperamos el cierre ')'
+                self.expect('DELIMETER', ')')
             else:
-                right_value = self.parse_valor_o_variable()  # Parseamos el valor derecho
+                right_value = self.parse_valor_o_variable()
             left_value = ('expresion_aritmetica', left_value, operator, right_value)
 
         return left_value
@@ -302,7 +308,8 @@ class Parser:
                 body.append(statement)
         if conditional_type.lower() == 'si':
 
-            if self.current_token.type == 'KEYWORD' and (self.current_token.value.lower() == 'sino' or self.current_token.value.lower() == 'tons'):
+            if self.current_token.type == 'KEYWORD' and (
+                    self.current_token.value.lower() == 'sino' or self.current_token.value.lower() == 'tons'):
                 self.conditional_stack.append(True)
             return 'if', condition, body
         else:
@@ -316,10 +323,8 @@ class Parser:
         open_braces = 1
         while open_braces > 0:
             if self.current_token.type == 'DELIMETER' and self.current_token.value == '}':
-                print('El valor actual del toquen antes del advance ', self.current_token)
                 open_braces -= 1
                 self.advance()
-                print('El valor actual del toquen después del advance es ', self.current_token)
                 if open_braces == 0:
                     break
             elif self.current_token.type == 'DELIMETER' and self.current_token.value == '{':
@@ -328,9 +333,7 @@ class Parser:
             else:
                 statement = self.parse_statement()
                 body.append(statement)
-
         self.conditional_stack.pop()
-        print('vamos a salir del else')
         return 'else', body
 
     def parse_condition(self):
@@ -343,12 +346,11 @@ class Parser:
                 self.advance()
                 right_value = self.current_token.value
                 self.advance()
-                return ('arithmetic_expression', left_value, operator, right_value)
+                return 'arithmetic_expression', left_value, operator, right_value
 
             return left_value
 
         if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
-            # Revisamos si es una expresión aritmética o solo un valor simple
             value1 = parse_expression()
 
             comparator = self.current_token.value
@@ -473,7 +475,7 @@ class Parser:
         self.expect('DELIMETER', ')')
         self.expect('DELIMETER', '{')
         while_body = self.parse_main_o_loop_body()
-        return 'while',condition, while_body
+        return 'while', condition, while_body
 
     def parse_for_condition(self):
         var_for = self.current_token.value
@@ -490,7 +492,7 @@ class Parser:
                 comparator = self.current_token.value
                 self.advance()
                 if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
-                    val2 = self.current_token.value  # Segundo valor (ej. 10)
+                    val2 = self.current_token.value
                     self.advance()
                     condition_node = ('comparison', val1, comparator, val2)
                 else:
@@ -498,15 +500,14 @@ class Parser:
             else:
                 raise SyntaxError(f"Se esperaba un comparador en la condición del for.")
 
-        self.expect('DELIMETER', ',')  # Coma que separa la condición del incremento/decremento
+        self.expect('DELIMETER', ',')
 
-        # Incremento o decremento (se espera algo como i++ o i = i + 1)
-        incremento_var = self.current_token.value  # La variable del incremento (ej. i)
+        incremento_var = self.current_token.value
         self.expect('IDENTIFIER')
         if self.current_token.type == 'OPERATOR' and self.current_token.value == '+':
             self.advance()
             if self.current_token.value == '+':
-                self.advance()  # Esto sería para un incremento como i++
+                self.advance()
                 incremento_node = ('incremento', incremento_var, '++')
             else:
                 self.expect('ASSIGNMENT')
@@ -516,7 +517,7 @@ class Parser:
         elif self.current_token.type == 'OPERATOR' and self.current_token.value == '-':
             self.advance()
             if self.current_token.value == '-':
-                self.advance()  # Esto sería para un decremento como i--
+                self.advance()
                 incremento_node = ('decremento', incremento_var, '--')
             else:
                 self.expect('ASSIGNMENT')
@@ -526,7 +527,7 @@ class Parser:
         else:
             raise SyntaxError(f"Se esperaba un incremento o decremento en el for.")
 
-        return {'initialization': (var_for, '=', var_ini),'condition': condition_node,'increment': incremento_node}
+        return {'initialization': (var_for, '=', var_ini), 'condition': condition_node, 'increment': incremento_node}
 
     def parse_for(self):
         print('El token con el que entra a parse for for es ', self.current_token)
@@ -536,9 +537,5 @@ class Parser:
         self.expect('DELIMETER', '{')
         for_body = self.parse_main_o_loop_body()
         self.expect('DELIMETER', '}')
-        return 'for',condition, for_body
+        return 'for', condition, for_body
 
-
-# if __name__ == "__main__":
-#   code = 'print("Hello World")'
-#  parser = Parser()
