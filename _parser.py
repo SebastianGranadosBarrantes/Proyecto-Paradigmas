@@ -52,7 +52,7 @@ class Parser:
         self.function_name = function_name
         self.verify_in_symbols_table(function_name, 'global')
         self.expect('DELIMETER', '(')
-        parameters = self.parse_parameters()
+        parameters = self.parse_parameters_def()
         for _type, name in parameters:
             self.verify_in_symbols_table(name, _type)
 
@@ -74,7 +74,7 @@ class Parser:
         self.function_name = prc_name
         self.expect('IDENTIFIER')
         self.expect('DELIMETER', '(')
-        parameters = self.parse_parameters()
+        parameters = self.parse_parameters_def()
         self.expect('DELIMETER', ')')
         self.expect('DELIMETER', '{')
         prc_body = self.parse_function_procedure_body('PROCEDURE')
@@ -84,7 +84,7 @@ class Parser:
         self.symbols_table[prc_name] = {"type": "procedure", "scope": "Global", "parameters": parameters}
         return 'procedure', prc_name, parameters, prc_body
 
-    def parse_parameters(self):
+    def parse_parameters_def(self):
         parametros = []
         if self.current_token.type != 'DELIMETER' or self.current_token.value != ')':
             while True:
@@ -97,6 +97,7 @@ class Parser:
         return parametros
 
     def parse_identificador(self):
+        print('el token que llega a parse_identificador es ', self.current_token)
         if self.current_token.type == 'IDENTIFIER':
             identificador = self.current_token.value
             self.advance()
@@ -140,17 +141,16 @@ class Parser:
         data_type = self.current_token.value
         self.expect('DATATYPE')
         identifier = self.parse_identificador()
+        print('El identifier parseado es ', identifier)
         if identifier in self.symbols_table:
             raise SyntaxError(f"La variable {identifier} ya existe!")
 
         if self.current_token.type == 'ASSIGNMENT':
-            self.advance()
-            value = self.current_token.value
+            value = self.parse_asignacion(identifier)
             if self.in_function:
                 self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": self.function_name, "value": value}
             else:
                 self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "global", "value": value}
-            self.advance()
             return data_type, identifier, value
         else:
             if self.in_function:
@@ -163,12 +163,15 @@ class Parser:
 
     def parse_statement(self):
         if self.current_token.type == 'IDENTIFIER':
+            print('El valor del identifier es ', self.current_token.value)
             sta_name = self.current_token.value
             self.advance()
             if self.current_token.value == '=':
+                print('El current token es ', self.current_token)
                 return self.parse_asignacion(sta_name)
             else:
-                return self.parse_function_call()
+                print('Vamos a parsear un fuction call')
+                return self.parse_function_call(sta_name)
         elif self.current_token.type == 'DATATYPE':
             return self.parse_var_def()
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'si':
@@ -211,27 +214,33 @@ class Parser:
             expression = self.current_token.value
             self.advance()
             return 'assignment', var_name, expression
-        expression = self.parse_expresion()  # Parseamos la expresión a la derecha del "="
+        expression = self.parse_expresion()
         return 'assignment', var_name, expression
 
-    def parse_function_call(self):
-        nombre_funcion = self.parse_identificador()
-        self.expect('DELIMETER')  # Esperamos "("
-        argumentos = self.parse_function_arguments()  # Parseamos los argumentos de la función
-        self.expect('DELIMETER')  # Esperamos ")"
-        return 'llamada_funcion', nombre_funcion, argumentos
+    def parse_function_call(self, function_name):
+        self.expect('DELIMETER', '(')
+        arguments = self.parse_arguments_pass()
+        self.expect('DELIMETER',')')
+        print('El token que va a salir es ', self.current_token)
+        return 'llamada_funcion', function_name, arguments
 
-    def parse_function_arguments(self):
+    def parse_arguments_pass(self):
         arguments = []
         if self.current_token.type != 'DELIMETER' and self.current_token.value != ')':
             while self.current_token.type != 'DELIMETER' and self.current_token.value != ')':
+                print('El valor del token antes es ', self.current_token)
                 value = self.parse_valor_o_variable()
                 arguments.append(value)
-                self.expect('DELIMETER')
+                print('El valor del token despues de parse_valor es ', self.current_token)
+                if self.current_token.type == 'DELIMETER' and self.current_token.value == ')':
+                    break
+                elif self.current_token.type == 'DELIMETER' and self.current_token.value == ',':
+                    self.advance()
         return arguments
 
     def parse_expresion(self):
-
+        print('Nos venimos para acá ')
+        print('El token que entra aca es ', self.current_token)
         if self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
             self.advance()
             sub_expr = self.parse_expresion()
@@ -239,6 +248,7 @@ class Parser:
             left_value = sub_expr
         else:
             left_value = self.parse_valor_o_variable()
+            print('El valor de salida es ', left_value, ' y el token actual es ', self.current_token)
         while self.current_token.type == 'OPERATOR':
             operator = self.current_token.value
             self.advance()
@@ -256,6 +266,8 @@ class Parser:
         if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER' or self.current_token.type == 'STRING':
             value = self.current_token.value
             self.advance()
+            if self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
+                value = self.parse_function_call(value)
             return value
         elif self.current_token.type == 'BOOLEAN':
             value = self.current_token.value.lower() == 'true'
@@ -322,15 +334,28 @@ class Parser:
         return 'else', body
 
     def parse_condition(self):
-        if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
-            value1 = self.current_token.value
+        def parse_expression():
+            left_value = self.current_token.value
             self.advance()
+
+            if self.current_token.type == 'ARITHMETIC_OPERATOR':
+                operator = self.current_token.value
+                self.advance()
+                right_value = self.current_token.value
+                self.advance()
+                return ('arithmetic_expression', left_value, operator, right_value)
+
+            return left_value
+
+        if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
+            # Revisamos si es una expresión aritmética o solo un valor simple
+            value1 = parse_expression()
+
             comparator = self.current_token.value
             self.expect('COMPARATOR')
 
             if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
-                value2 = self.current_token.value
-                self.advance()
+                value2 = parse_expression()
                 condition_node = ('comparison', value1, comparator, value2)
 
                 if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
@@ -342,8 +367,8 @@ class Parser:
 
             elif self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
                 self.advance()
-                nested_condition = self.parse_condition()  # Llama recursivamente para procesar la sub-expresión
-                self.expect('DELIMETER')  # Espera un delimitador de cierre ')'
+                nested_condition = self.parse_condition()
+                self.expect('DELIMETER')
                 condition_node = ('comparison', value1, comparator, nested_condition)
 
                 if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
@@ -355,10 +380,12 @@ class Parser:
             else:
                 raise SyntaxError(
                     f"Se esperaba un identificador, número o paréntesis después del comparador, pero se encontró {self.current_token}")
+
         elif self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
+            # Inicio de una sub-condición entre paréntesis
             self.advance()
             nested_condition = self.parse_condition()
-            self.expect('DELIMETER')
+            self.expect('DELIMETER')  # Cierre de paréntesis
             if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
                 log_op = self.current_token.value
                 self.advance()
@@ -372,6 +399,7 @@ class Parser:
 
     def parse_io_print(self):
         arguments = []
+        print('entra al escriba')
         self.expect('IO', 'escriba')
         self.expect('DELIMETER', '(')
         while self.current_token.type != 'DELIMETER' or self.current_token.value != ')':
@@ -418,7 +446,6 @@ class Parser:
         self.expect('DELIMETER', ')')
         self.expect('DELIMETER', '{')
         main_body = self.parse_main_o_loop_body()
-        self.expect('DELIMETER', '}')
         return 'main', main_body
 
     def parse_main_o_loop_body(self):
@@ -426,6 +453,7 @@ class Parser:
         statements = []
         while open_braces > 0:
             if self.current_token.type == 'DELIMETER' and self.current_token.value == '}':
+                print(f"El dentro del if delimeter es {self.current_token}")
                 open_braces -= 1
                 self.advance()
             elif self.current_token.type == 'DELIMETER' and self.current_token.value == '{':
@@ -434,17 +462,17 @@ class Parser:
             else:
                 statement = self.parse_statement()
                 statements.append(statement)
-
-            return 'main_body', statements
+        print('El token con el que sale es ', self.current_token)
+        return 'main_body', statements
 
     def parse_while(self):
         print('El token con el que entra a parse while es ', self.current_token)
         self.expect('DELIMETER', '(')
         condition = self.parse_condition()
+        print('la condicion que se optiene es ', condition)
         self.expect('DELIMETER', ')')
         self.expect('DELIMETER', '{')
         while_body = self.parse_main_o_loop_body()
-        self.expect('DELIMETER', '}')
         return 'while',condition, while_body
 
     def parse_for_condition(self):
@@ -499,7 +527,6 @@ class Parser:
             raise SyntaxError(f"Se esperaba un incremento o decremento en el for.")
 
         return {'initialization': (var_for, '=', var_ini),'condition': condition_node,'increment': incremento_node}
-
 
     def parse_for(self):
         print('El token con el que entra a parse for for es ', self.current_token)

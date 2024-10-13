@@ -18,7 +18,7 @@ token_patterns = [
     ('COMMENT_START', r'-\*'),
     ('COMMENT_END', r'\*\-'),
     ('COMPARATOR', r'(<>|==|>=|<=|>|<)'),
-    ('OPERATOR', r'[+\-*/]'),
+    ('OPERATOR', r'[+\-*/%]'),
     ('ASSIGNMENT', r'='),
     ('DELIMETER', r'[(),:{}]|\[\]'),
     ('WHITESPACE', r'\s+'),

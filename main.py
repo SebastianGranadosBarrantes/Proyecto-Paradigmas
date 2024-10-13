@@ -18,6 +18,7 @@ class MainWindow(QMainWindow):
         text = self.ui.Txt_Codigo.toPlainText()
         if text == "":
             QMessageBox.warning(self, 'Advertencia', '¡Se esta intentando compilar cuando no hay código que compilar!')
+
         else:
             self.lexer.text = text
             tokens = self.lexer.tokenize()
@@ -28,8 +29,10 @@ class MainWindow(QMainWindow):
                 self.parser.parse()
             except SyntaxError as e:
                 QMessageBox.critical(self, 'Error', str(e))
+                print(e)
             except Exception as e:
-                QMessageBox.critical(self, 'Error', f"{str(e)}")
+                QMessageBox.critical(self, 'Error inesperado', f"{str(e)}")
+                print(f"Error al parsear {e}")
             self.ui.Txt_Salida.setText(output_text)
             print('El resultado es:', self.parser.tree)
             print(f"La siguiente es la tabla de simbolos \n{self.parser.symbols_table}")
