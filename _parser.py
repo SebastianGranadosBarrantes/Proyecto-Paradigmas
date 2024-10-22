@@ -31,7 +31,6 @@ class Parser:
         counter = 1
         self.tree = []
         while self.current_token is not None:
-            print('El current token es ', self.current_token)
             print('Iteración del ciclo numero', counter)
             if self.current_token.type == 'FUNCTION':
                 self.tree.append(self.parse_function())
@@ -117,11 +116,14 @@ class Parser:
             raise SyntaxError(f"Se esperaba un type de retorno, pero se encontró {self.current_token}")
 
     def parse_function_procedure_body(self, _type):
+        print('dentro de parse function body')
         statements = []
         open_braces = 1
         while open_braces > 0:
             if self.current_token.type == 'DELIMETER' and self.current_token.value == '{':
+                print('el valor de open braces antes del incremento es ', open_braces)
                 open_braces += 1
+                print('el valor de open braces despues del incremento es ', open_braces)
                 self.advance()
             elif self.current_token.type == 'DELIMETER' and self.current_token.value == '}':
                 open_braces -= 1
@@ -135,6 +137,7 @@ class Parser:
                 valor_retorno = self.parse_valor_o_variable()
                 statements.append(('retorna', valor_retorno))
             else:
+                print('vamos a parsear ', self.current_token)
                 statement = self.parse_statement()
                 statements.append(statement)
         return 'function_body', statements
@@ -173,7 +176,6 @@ class Parser:
             sta_name = self.current_token.value
             self.advance()
             if self.current_token.value == '=':
-                print('El current token es ', self.current_token)
                 return self.parse_asignacion(sta_name)
             else:
                 print('Vamos a parsear un fuction call')
@@ -202,10 +204,10 @@ class Parser:
             return 'retorna', return_value
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'mientras':
             self.advance()
-            self.parse_while()
+            return self.parse_while()
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'haga':
             self.advance()
-            self.parse_for()
+            return self.parse_for()
         elif self.current_token.type == 'IO' and self.current_token.value.lower() == 'escriba':
             return self.parse_io_print()
         elif self.current_token.type == 'IO' and self.current_token.value.lower() == 'lea':
@@ -219,6 +221,7 @@ class Parser:
         if self.current_token.type == 'STRING':
             expression = self.current_token.value
             self.advance()
+            self.set_variable_value(var_name, expression)
             return 'assignment', var_name, expression
         expression = self.parse_expresion()
         return 'assignment', var_name, expression
@@ -336,28 +339,28 @@ class Parser:
         self.conditional_stack.pop()
         return 'else', body
 
-    def parse_condition(self):
-        def parse_expression():
-            left_value = self.current_token.value
+    def parse_expression(self):
+        left_value = self.current_token.value
+        self.advance()
+
+        if self.current_token.type == 'ARITHMETIC_OPERATOR':
+            operator = self.current_token.value
             self.advance()
+            right_value = self.current_token.value
+            self.advance()
+            return 'arithmetic_expression', left_value, operator, right_value
 
-            if self.current_token.type == 'ARITHMETIC_OPERATOR':
-                operator = self.current_token.value
-                self.advance()
-                right_value = self.current_token.value
-                self.advance()
-                return 'arithmetic_expression', left_value, operator, right_value
-
-            return left_value
+        return left_value
+    def parse_condition(self):
 
         if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
-            value1 = parse_expression()
+            value1 = self.parse_expression()
 
             comparator = self.current_token.value
             self.expect('COMPARATOR')
 
             if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
-                value2 = parse_expression()
+                value2 = self.parse_expression()
                 condition_node = ('comparison', value1, comparator, value2)
 
                 if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
@@ -464,7 +467,6 @@ class Parser:
             else:
                 statement = self.parse_statement()
                 statements.append(statement)
-        print('El token con el que sale es ', self.current_token)
         return 'main_body', statements
 
     def parse_while(self):
@@ -501,33 +503,22 @@ class Parser:
                 raise SyntaxError(f"Se esperaba un comparador en la condición del for.")
 
         self.expect('DELIMETER', ',')
-
-        incremento_var = self.current_token.value
+        increment_var = self.current_token.value
         self.expect('IDENTIFIER')
-        if self.current_token.type == 'OPERATOR' and self.current_token.value == '+':
+        if self.current_token.type == 'INCREMENT':
             self.advance()
-            if self.current_token.value == '+':
-                self.advance()
-                incremento_node = ('incremento', incremento_var, '++')
-            else:
-                self.expect('ASSIGNMENT')
-                increment_value = self.current_token.value
-                self.advance()
-                incremento_node = ('incremento', incremento_var, '+', increment_value)
-        elif self.current_token.type == 'OPERATOR' and self.current_token.value == '-':
+            increment_node = ('increment', increment_var, '++')
+        elif self.current_token.type == 'DECREMENT':
             self.advance()
-            if self.current_token.value == '-':
-                self.advance()
-                incremento_node = ('decremento', incremento_var, '--')
-            else:
-                self.expect('ASSIGNMENT')
-                decrement_value = self.current_token.value
-                self.advance()
-                incremento_node = ('decremento', incremento_var, '-', decrement_value)
+            increment_node = ('decrement', increment_var, '--')
+        elif self.current_token.type == 'ASSIGNMENT':
+            self.advance()
+            value = self.parse_expresion()
+            increment_node = ('assignment', value, '=')
         else:
             raise SyntaxError(f"Se esperaba un incremento o decremento en el for.")
-
-        return {'initialization': (var_for, '=', var_ini), 'condition': condition_node, 'increment': incremento_node}
+        print('El token de salida aqui es ', self.current_token)
+        return {'initialization': (var_for, '=', var_ini), 'condition': condition_node, 'increment': increment_node}
 
     def parse_for(self):
         print('El token con el que entra a parse for for es ', self.current_token)
@@ -536,6 +527,16 @@ class Parser:
         self.expect('DELIMETER', ')')
         self.expect('DELIMETER', '{')
         for_body = self.parse_main_o_loop_body()
-        self.expect('DELIMETER', '}')
+        print('Antes de retornar ')
         return 'for', condition, for_body
 
+    def get_variable_value(self, variable_name):
+        if variable_name in self.symbols_table:
+            if self.symbols_table[variable_name].get('type', None) == 'variable':
+                return self.symbols_table[variable_name].get('value')
+        raise NameError(f"Se esta intentando acceder al valor de un elemento de la tabla de simbolos que no existe o no es una variable")
+
+    def set_variable_value(self, variable_name, value):
+        if variable_name in self.symbols_table:
+            if self.symbols_table[variable_name].get('type', None) == 'variable':
+                self.symbols_table[variable_name].set('value', value)

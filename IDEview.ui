@@ -125,7 +125,7 @@ background-color: rgb(41, 178, 190);
       </widget>
      </item>
      <item>
-      <widget class="QTextEdit" name="Txt_Salida"/>
+      <widget class="QTextEdit" name="TxtSalida"/>
      </item>
     </layout>
    </widget>
@@ -229,14 +229,29 @@ background-color: rgb(41, 178, 190);
      <string>Opciones</string>
     </property>
    </widget>
-   <widget class="QMenu" name="menuSalir">
+   <widget class="QMenu" name="menuEjemplos">
+    <property name="title">
+     <string>Ejemplos</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="AFFuncion"/>
+    <addaction name="separator"/>
+    <addaction name="AFProcedimiento"/>
+    <addaction name="separator"/>
+    <addaction name="AFCondicionales"/>
+    <addaction name="separator"/>
+    <addaction name="AFCondicionalesAnidados"/>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="QMSalir">
     <property name="title">
      <string>Salir</string>
     </property>
    </widget>
    <addaction name="menuNuevo"/>
    <addaction name="menuOpciones"/>
-   <addaction name="menuSalir"/>
+   <addaction name="menuEjemplos"/>
+   <addaction name="QMSalir"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionAbrir">
@@ -257,6 +272,26 @@ background-color: rgb(41, 178, 190);
   <action name="actionGuardar_como">
    <property name="text">
     <string>Guardar como</string>
+   </property>
+  </action>
+  <action name="AFFuncion">
+   <property name="text">
+    <string>Funcion</string>
+   </property>
+  </action>
+  <action name="AFProcedimiento">
+   <property name="text">
+    <string>Procedimiento</string>
+   </property>
+  </action>
+  <action name="AFCondicionales">
+   <property name="text">
+    <string>Condicionales</string>
+   </property>
+  </action>
+  <action name="AFCondicionalesAnidados">
+   <property name="text">
+    <string>Condicionales anidados</string>
    </property>
   </action>
  </widget>
