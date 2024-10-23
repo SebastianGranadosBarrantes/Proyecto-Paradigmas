@@ -3,6 +3,8 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox
 from IDEController import Ui_MainWindow
 from lexer import Lexer
 from _parser import Parser
+from d2Binder import TextModel
+from interpreter import Interpreter
 
 
 class MainWindow(QMainWindow):
@@ -10,6 +12,9 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.parser = None
+        self.model = None
+        self.text_edit = None
+        self.interpreter = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.Btn_Compilar.clicked.connect(self.compile_handler)
@@ -29,7 +34,7 @@ class MainWindow(QMainWindow):
 main(){
     float radio = 4
     calcular_area_circulo(radio) 
-}
+} 
 """
 
         self.ui.Txt_Codigo.setText(function_text)
@@ -87,6 +92,33 @@ main(){
 }"""
 
         self.ui.Txt_Codigo.setText(conditional_text)
+        self.model = TextModel()
+
+        # Assuming your widgets are already created in the .ui file
+        self.text_edit = self.ui.Txt_Consola  # Accessing QTextEdit from the UI
+
+        self.setup_bindings()
+
+    def setup_bindings(self):
+        # When the model changes, update the QTextEdit
+        self.model.text_changed.connect(self.text_edit.setPlainText)
+
+        # When the model changes, update the QLabel
+        self.model.text_changed.connect(self.ui.Txt_Consola.setText)
+
+        # When the text in QTextEdit changes, update the model
+        self.text_edit.textChanged.connect(self.update_model_from_text_edit)
+
+    def update_model_from_text_edit(self):
+        # Update the model's text when the text in the QTextEdit changes
+        new_text = self.text_edit.toPlainText()
+        self.model.text = new_text
+        self.print_text_to_console()
+
+    def print_text_to_console(self):
+        # Print the current text in the QTextEdit to the console
+        current_text = self.text_edit.toPlainText()
+        print(f"Current Text in QTextEdit: {current_text}")
 
     def compile_handler(self):
         print('Se ejecuta')
@@ -97,11 +129,29 @@ main(){
         else:
             self.lexer.text = text
             tokens = self.lexer.tokenize()
-            output_text = ''
             self.parser = Parser(tokens)
             print(self.parser.tokens)
             try:
                 self.parser.parse()
+                print("""--------------------------------------------------------------------------------------------------------------------
+                
+                
+                
+                
+                
+                
+                """)
+                print('El resultado del parser es: ', self.parser.tree)
+                print("""--------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+                                """)
+                self.interpreter = Interpreter(self.parser.tree)
+                self.interpreter.interpret()
             except SyntaxError as e:
                 QMessageBox.critical(self, 'Error', str(e))
                 print(e)
@@ -109,9 +159,8 @@ main(){
                 print('Paso un error ')
                 QMessageBox.critical(self, 'Error inesperado', f"{str(e)}")
                 print(f"Error al parsear {e}")
-            self.ui.TxtSalida.setText(output_text)
-            print('El resultado es:', self.parser.tree)
-            print(f"La siguiente es la tabla de simbolos \n{self.parser.symbols_table}")
+
+
 
 
 if __name__ == "__main__":

@@ -7,9 +7,13 @@
 
 
 from PyQt6 import QtCore, QtGui, QtWidgets
-
+from PyQt6.QtCore import pyqtSlot
 
 class Ui_MainWindow(object):
+    # Connect the textChanged signal to a function that prints a message
+    def on_text_changed(self):
+        print("Text modified")
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(978, 657)
@@ -110,6 +114,7 @@ class Ui_MainWindow(object):
         self.Txt_Consola = QtWidgets.QTextEdit(parent=self.verticalLayoutWidget_3)
         self.Txt_Consola.setStyleSheet("background-color: rgb(255, 255, 255);")
         self.Txt_Consola.setObjectName("Txt_Consola")
+        self.Txt_Consola.textChanged.connect(self.on_text_changed)
         self.verticalLayout_3.addWidget(self.Txt_Consola)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(parent=MainWindow)

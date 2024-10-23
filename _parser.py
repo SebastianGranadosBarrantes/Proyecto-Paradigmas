@@ -32,6 +32,7 @@ class Parser:
         self.tree = []
         while self.current_token is not None:
             print('Iteración del ciclo numero', counter)
+            print('El current token que viene es ', self.current_token.type)
             if self.current_token.type == 'FUNCTION':
                 self.tree.append(self.parse_function())
             elif self.current_token.type == 'PROCEDURE':
@@ -39,6 +40,8 @@ class Parser:
             elif self.current_token.type == 'MAIN' and self.already_main != True:
                 self.already_main = True
                 self.tree.append(self.parse_main())
+            elif self.current_token.type == 'DATATYPE':
+                self.tree.append(self.parse_var_def())
             else:
                 raise SyntaxError(f"Token inesperado {self.current_token.value}")
             counter += 1
@@ -152,13 +155,14 @@ class Parser:
 
         if self.current_token.type == 'ASSIGNMENT':
             value = self.parse_asignacion(identifier)
+
             if self.in_function:
                 self.symbols_table[identifier] = {"type": "variable", "data_type": data_type,
                                                   "scope": self.function_name, "value": value}
             else:
                 self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "global",
                                                   "value": value}
-            return data_type, identifier, value
+            return 'var_declaration', data_type, identifier, value
         else:
             if self.in_function:
                 self.symbols_table[identifier] = {"type": "variable", "data_type": data_type,
@@ -166,7 +170,7 @@ class Parser:
             else:
                 self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "global",
                                                   "value": ""}
-            return data_type, identifier
+            return 'var_declaration', data_type, identifier
 
         # cada una de las lineas del body
 
@@ -248,8 +252,6 @@ class Parser:
         return arguments
 
     def parse_expresion(self):
-        print('Nos venimos para acá ')
-        print('El token que entra aca es ', self.current_token)
         if self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
             self.advance()
             sub_expr = self.parse_expresion()
@@ -314,9 +316,9 @@ class Parser:
             if self.current_token.type == 'KEYWORD' and (
                     self.current_token.value.lower() == 'sino' or self.current_token.value.lower() == 'tons'):
                 self.conditional_stack.append(True)
-            return 'if', condition, body
+            return 'if', condition, ('body',body)
         else:
-            return 'elif', condition, body
+            return 'elif', condition, ('body', body)
 
     def parse_else(self):
         print('El token que llega es ', self.current_token)
@@ -337,7 +339,7 @@ class Parser:
                 statement = self.parse_statement()
                 body.append(statement)
         self.conditional_stack.pop()
-        return 'else', body
+        return 'else', ('body', body)
 
     def parse_expression(self):
         left_value = self.current_token.value
