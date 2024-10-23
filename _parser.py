@@ -417,7 +417,7 @@ class Parser:
             elif self.current_token.type == 'IDENTIFIER':
                 arguments.append(self.current_token.value)
             elif self.current_token.type == 'NEWLINE' and self.current_token.value == 'salto':
-                arguments.append(self.current_token.value)
+                arguments.append("\n")
             else:
                 raise SyntaxError(f"Se esperaba un argumento valido pero se encontro {self.current_token}")
             self.advance()

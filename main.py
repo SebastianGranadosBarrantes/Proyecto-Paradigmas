@@ -22,6 +22,7 @@ class MainWindow(QMainWindow):
         self.ui.AFProcedimiento.triggered.connect(self.proc_example_handler)
         self.ui.AFCondicionales.triggered.connect(self.conditional_example_handler)
         self.ui.AFCondicionalesAnidados.triggered.connect(self.nested_conditional_example_handler)
+        self.ui.Btn_Ejecutar.clicked.connect(self.run_handler)
         self.lexer = Lexer('')
 
     def function_example_handler(self):
@@ -148,10 +149,8 @@ main(){
 
 
 
-
                                 """)
-                self.interpreter = Interpreter(self.parser.tree)
-                self.interpreter.interpret()
+                QMessageBox.information(self,'Compilación correcta', 'Se compilo el código correctamente')
             except SyntaxError as e:
                 QMessageBox.critical(self, 'Error', str(e))
                 print(e)
@@ -160,7 +159,15 @@ main(){
                 QMessageBox.critical(self, 'Error inesperado', f"{str(e)}")
                 print(f"Error al parsear {e}")
 
-
+    def run_handler(self):
+        self.interpreter = Interpreter(self.parser.tree)
+        self.interpreter.interpret()
+        outputs = ''
+        print(self.interpreter.outputs)
+        for output in self.interpreter.outputs:
+            outputs += str(output)
+        print('Outputs es : ', outputs)
+        self.ui.TxtSalida.setPlainText(outputs)
 
 
 if __name__ == "__main__":

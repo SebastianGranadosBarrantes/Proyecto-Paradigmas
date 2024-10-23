@@ -4,12 +4,14 @@ class Interpreter:
         self.symbols_table = {}
         self.functions = {}
         self.current_scope = None
+        self.outputs = []
+        self.already_encountered = False
 
     def interpret(self):
         for node in self.tree:
             if node[0] == 'function' or node[0] == 'procedure':
                 self.visit(node)
-            elif node[0] == 'var_declaration':  # Registrar variables globales
+            elif node[0] == 'var_declaration':
                 self.current_scope = 'global'
                 self.visit(node)
 
@@ -42,7 +44,9 @@ class Interpreter:
         elif node_type == 'elif':
             self.visit_if(node)
         elif node_type == 'else':
-            self.visit_else(node)
+            if not self.already_encountered:
+                self.visit_else(node)
+            self.already_encountered = False
         elif node_type == 'while':
             self.visit_while(node)
         elif node_type == 'for':
@@ -124,7 +128,7 @@ class Interpreter:
                 output += str(self.symbols_table[arg]['value'])
             else:
                 output += str(arg.replace('"', ''))
-        print(output)
+        self.outputs.append(output)
 
     def visit_function_call(self, node):
         _, function_name, arguments = node
@@ -157,6 +161,7 @@ class Interpreter:
     def visit_if(self, node):
         _, condition, body = node
         if self.evaluate_condition(condition):
+            self.already_encountered = True
             self.execute_body(body)
 
     def visit_while(self, node):
