@@ -525,11 +525,11 @@ class Parser:
         elif self.current_token.type == 'ASSIGNMENT':
             self.advance()
             value = self.parse_expresion()
-            increment_node = ('assignment', value, '=')
+            increment_node = ('assignment', increment_var, value)
         else:
             raise SyntaxError(f"Se esperaba un incremento o decremento en el for.")
         print('El token de salida aqui es ', self.current_token)
-        return {'initialization': (var_for, '=', var_ini), 'condition': condition_node, 'increment': increment_node}
+        return {'initialization': (var_for, '=', float(var_ini)), 'condition': condition_node, 'increment': increment_node}
 
     def parse_for(self):
         print('El token con el que entra a parse for for es ', self.current_token)

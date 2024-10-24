@@ -24,6 +24,7 @@ class MainWindow(QMainWindow):
         self.ui.AFCondicionalesAnidados.triggered.connect(self.nested_conditional_example_handler)
         self.ui.AFCicloWhile.triggered.connect(self.while_loop_example_handler)
         self.ui.Btn_Ejecutar.clicked.connect(self.run_handler)
+        self.ui.AFCicloFor.triggered.connect(self.for_loop_example_handler)
         self.lexer = Lexer('')
 
     def function_example_handler(self):
@@ -98,7 +99,7 @@ main(){
         self.setup_bindings()
 
     def while_loop_example_handler(self):
-        for_text = """procedimienton verificar_valores(entero a, entero b) {            
+        while_text = """procedimienton verificar_valores(entero a, entero b) {            
         string resultado 
         si (a > b) { 
         si (a > 100) { 
@@ -153,8 +154,22 @@ entero limite_pares = 10
 imprimir_numeros_pares(limite_pares)
 }
 """
-        self.ui.Txt_Codigo.setText(for_text)
+        self.ui.Txt_Codigo.setText(while_text)
 
+    def for_loop_example_handler(self):
+        for_text = """procedimienton imprimir_numeros_pares(entero limite) { 
+    entero i 
+    haga(i = 0, i < limite, i = i + 2) {
+        escriba("El número par es: ", i, salto) 
+    }
+    } 
+
+main() {
+     entero limite_pares = 10 
+    imprimir_numeros_pares(limite_pares) 
+}        
+        """
+        self.ui.Txt_Codigo.setText(for_text)
 
     def setup_bindings(self):
         # When the model changes, update the QTextEdit

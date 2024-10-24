@@ -182,12 +182,37 @@ class Interpreter:
             self.execute_body(body)
 
     def visit_for(self, node):
+        print('El nodo que entra al for es ', node)
         _, loop_data, body = node
-        init, condition, increment = loop_data.values()
-        self.symbols_table[init[0]] = int(init[2])
+        init_var, _, init_value = loop_data['initialization']
+        print('El tipo de init_var es ', type(init_var))
+        self.symbols_table[init_var] = { 'type': 'variable', 'data_type': 'entero', 'value': init_value, 'scope': self.current_scope}
+        condition = loop_data['condition']
+        increment = loop_data['increment']
+        print('El current scope es ', self.current_scope)
+        print('El valor de la variable contador es ', self.symbols_table[init_var])
+        print('El condition es ', condition)
+        print('El increment es ', increment)
+        print('El body del while es: ', body)
+        print('El init value es ', init_value)
+        print('El resultado del condition es ', self.evaluate_condition(condition))
         while self.evaluate_condition(condition):
+            print('El valor actual de la variable contador es ', self.symbols_table[init_var]['value'])
             self.execute_body(body)
+            print('Sale del body')
             self.update_increment(increment)
+
+    def update_increment(self, increment):
+        typee, var_name, exp_aritmetica = increment
+        if typee == 'assignment':
+            value = self.evaluate_expression(exp_aritmetica)
+        elif typee == 'increment':
+            value = self.symbols_table[var_name]['value'] + 1
+        else:
+            value = self.symbols_table[var_name]['value'] - 1
+
+        self.symbols_table[var_name]['value'] = value
+        print('El valor actualizado es ', value)
 
     def visit_return(self, node):
         _, value = node
@@ -208,20 +233,25 @@ class Interpreter:
         if condition[0] == 'comparison':
             left, operator, right = condition[1:] 
             if left in self.symbols_table:
-                self.print_symbols_table()
                 left_value = self.symbols_table[left]['value']
             elif isinstance(left, tuple) and left[0] == 'expresion_aritmetica':
                 left_value = self.evaluate_expression(left)
             else:
                 left_value = left
+
             print('El left value es ', left_value)
+
             if right in self.symbols_table:
                 right_value = self.symbols_table[right]['value']
+            elif isinstance(right, tuple) and right[0] == 'expresion_aritmetica':
+                right_value = self.evaluate_expression(right)
             else:
                 right_value = right
+
             print('El valor izquierdo es ', left_value, ' y  el tipo es ', type(left_value))
             print('El valor derecho es ', right_value, ' y  el tipo es ', type(right_value))
-            print('El operador es ', operator )
+            print('El operador es ', operator)
+
             return self.apply_comparator(left_value, operator, right_value)
         elif condition[0] == 'logical_expression':
             left_expr, operator, right_expr = condition[1:]
@@ -257,14 +287,14 @@ class Interpreter:
         print('Esta es la tabla de simbolos dentro del interprete')
         print(self.symbols_table)
 
-    def update_increment(self, increment):
-        var, op, value = increment
-        if op == '++':
-            self.symbols_table[var] += 1
-        elif op == '--':
-            self.symbols_table[var] -= 1
-        elif op == '=':
-            self.symbols_table[var] = value
+    #def update_increment(self, increment):
+        #var, op, value = increment
+        #if op == '++':
+            #self.symbols_table[var] += 1
+        #elif op == '--':
+            #self.symbols_table[var] -= 1
+        #elif op == '=':
+            #self.symbols_table[var] = value
 
     def visit_else(self, body):
         _, body = body
