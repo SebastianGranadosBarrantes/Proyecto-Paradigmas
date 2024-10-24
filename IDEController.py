@@ -7,13 +7,9 @@
 
 
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import pyqtSlot
+
 
 class Ui_MainWindow(object):
-    # Connect the textChanged signal to a function that prints a message
-    def on_text_changed(self):
-        print("Text modified")
-
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(978, 657)
@@ -114,7 +110,6 @@ class Ui_MainWindow(object):
         self.Txt_Consola = QtWidgets.QTextEdit(parent=self.verticalLayoutWidget_3)
         self.Txt_Consola.setStyleSheet("background-color: rgb(255, 255, 255);")
         self.Txt_Consola.setObjectName("Txt_Consola")
-        self.Txt_Consola.textChanged.connect(self.on_text_changed)
         self.verticalLayout_3.addWidget(self.Txt_Consola)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(parent=MainWindow)
@@ -124,10 +119,10 @@ class Ui_MainWindow(object):
         self.menuNuevo.setObjectName("menuNuevo")
         self.menuOpciones = QtWidgets.QMenu(parent=self.menubar)
         self.menuOpciones.setObjectName("menuOpciones")
-        self.QMSalir = QtWidgets.QMenu(parent=self.menubar)
-        self.QMSalir.setObjectName("QMSalir")
         self.menuEjemplos = QtWidgets.QMenu(parent=self.menubar)
         self.menuEjemplos.setObjectName("menuEjemplos")
+        self.QMSalir = QtWidgets.QMenu(parent=self.menubar)
+        self.QMSalir.setObjectName("QMSalir")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(parent=MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -148,6 +143,10 @@ class Ui_MainWindow(object):
         self.AFCondicionales.setObjectName("AFCondicionales")
         self.AFCondicionalesAnidados = QtGui.QAction(parent=MainWindow)
         self.AFCondicionalesAnidados.setObjectName("AFCondicionalesAnidados")
+        self.AFCicloWhile = QtGui.QAction(parent=MainWindow)
+        self.AFCicloWhile.setObjectName("AFCicloWhile")
+        self.AFCicloFor = QtGui.QAction(parent=MainWindow)
+        self.AFCicloFor.setObjectName("AFCicloFor")
         self.menuNuevo.addSeparator()
         self.menuNuevo.addAction(self.actionAbrir)
         self.menuNuevo.addAction(self.actionNuevo)
@@ -161,6 +160,10 @@ class Ui_MainWindow(object):
         self.menuEjemplos.addAction(self.AFCondicionales)
         self.menuEjemplos.addSeparator()
         self.menuEjemplos.addAction(self.AFCondicionalesAnidados)
+        self.menuEjemplos.addSeparator()
+        self.menuEjemplos.addAction(self.AFCicloWhile)
+        self.menuEjemplos.addSeparator()
+        self.menuEjemplos.addAction(self.AFCicloFor)
         self.menuEjemplos.addSeparator()
         self.menubar.addAction(self.menuNuevo.menuAction())
         self.menubar.addAction(self.menuOpciones.menuAction())
@@ -180,8 +183,8 @@ class Ui_MainWindow(object):
         self.label_consola.setText(_translate("MainWindow", "Consola"))
         self.menuNuevo.setTitle(_translate("MainWindow", "Archivo"))
         self.menuOpciones.setTitle(_translate("MainWindow", "Opciones"))
-        self.QMSalir.setTitle(_translate("MainWindow", "Salir"))
         self.menuEjemplos.setTitle(_translate("MainWindow", "Ejemplos"))
+        self.QMSalir.setTitle(_translate("MainWindow", "Salir"))
         self.actionAbrir.setText(_translate("MainWindow", "Abrir"))
         self.actionNuevo.setText(_translate("MainWindow", "Nuevo"))
         self.actionGuardar.setText(_translate("MainWindow", "Guardar"))
@@ -190,6 +193,8 @@ class Ui_MainWindow(object):
         self.AFProcedimiento.setText(_translate("MainWindow", "Procedimiento"))
         self.AFCondicionales.setText(_translate("MainWindow", "Condicionales"))
         self.AFCondicionalesAnidados.setText(_translate("MainWindow", "Condicionales anidados"))
+        self.AFCicloWhile.setText(_translate("MainWindow", "Ciclo while"))
+        self.AFCicloFor.setText(_translate("MainWindow", "Ciclo for"))
 
 
 if __name__ == "__main__":

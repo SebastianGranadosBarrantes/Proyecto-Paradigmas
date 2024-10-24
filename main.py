@@ -22,6 +22,7 @@ class MainWindow(QMainWindow):
         self.ui.AFProcedimiento.triggered.connect(self.proc_example_handler)
         self.ui.AFCondicionales.triggered.connect(self.conditional_example_handler)
         self.ui.AFCondicionalesAnidados.triggered.connect(self.nested_conditional_example_handler)
+        self.ui.AFCicloWhile.triggered.connect(self.while_loop_example_handler)
         self.ui.Btn_Ejecutar.clicked.connect(self.run_handler)
         self.lexer = Lexer('')
 
@@ -91,14 +92,69 @@ main(){
     }
 
 }"""
-
         self.ui.Txt_Codigo.setText(conditional_text)
         self.model = TextModel()
-
-        # Assuming your widgets are already created in the .ui file
         self.text_edit = self.ui.Txt_Consola  # Accessing QTextEdit from the UI
-
         self.setup_bindings()
+
+    def while_loop_example_handler(self):
+        for_text = """procedimienton verificar_valores(entero a, entero b) {            
+        string resultado 
+        si (a > b) { 
+        si (a > 100) { 
+        escriba("a es mayor que b y también es mayor que 100", salto) 
+        resultado = "a_grande" 
+        } sino (a == 100) { 
+        escriba("a es igual a 100 pero mayor que b", salto) 
+        resultado = "a_igual_100" 
+        } tons { 
+        escriba("a es mayor que b pero menor que 100", salto) 
+        resultado = "a_mayor_b_menor_100" 
+        } 
+        } sino (a < b) { 
+        escriba("b es mayor que a", salto) 
+        resultado = "b_mayor_a" 
+        } tons { 
+        escriba("a y b son iguales", salto) 
+        resultado = "a_igual_b" 
+        }
+        escriba("Resultado: ", resultado, salto)
+        }
+
+        funcioncita calcular_factorial(entero n) : entero { 
+    entero factorial = 1 
+    mientras (n > 0) { 
+    factorial = factorial * n 
+    n = n - 1 
+    } 
+    retorna factorial 
+        }
+
+    procedimienton imprimir_numeros_pares(entero limite) {
+entero i = 0
+mientras (i <= limite) {
+si (i % 2 == 0) {
+escriba("El número ", i, " es par", salto)
+}
+i = i + 1
+}
+    }
+
+    main() {
+entero a = 150
+entero b = 100
+verificar_valores(a, b)
+
+entero numero_factorial = 5
+entero resultado_factorial = calcular_factorial(numero_factorial)
+escriba("El factorial de ", numero_factorial, " es ", resultado_factorial, salto)
+
+entero limite_pares = 10
+imprimir_numeros_pares(limite_pares)
+}
+"""
+        self.ui.Txt_Codigo.setText(for_text)
+
 
     def setup_bindings(self):
         # When the model changes, update the QTextEdit
@@ -166,7 +222,6 @@ main(){
         print(self.interpreter.outputs)
         for output in self.interpreter.outputs:
             outputs += str(output)
-        print('Outputs es : ', outputs)
         self.ui.TxtSalida.setPlainText(outputs)
 
 

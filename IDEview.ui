@@ -242,16 +242,14 @@ background-color: rgb(41, 178, 190);
     <addaction name="separator"/>
     <addaction name="AFCondicionalesAnidados"/>
     <addaction name="separator"/>
-   </widget>
-   <widget class="QMenu" name="QMSalir">
-    <property name="title">
-     <string>Salir</string>
-    </property>
+    <addaction name="AFCicloWhile"/>
+    <addaction name="separator"/>
+    <addaction name="AFCicloFor"/>
+    <addaction name="separator"/>
    </widget>
    <addaction name="menuNuevo"/>
    <addaction name="menuOpciones"/>
    <addaction name="menuEjemplos"/>
-   <addaction name="QMSalir"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionAbrir">
@@ -292,6 +290,16 @@ background-color: rgb(41, 178, 190);
   <action name="AFCondicionalesAnidados">
    <property name="text">
     <string>Condicionales anidados</string>
+   </property>
+  </action>
+  <action name="AFCicloWhile">
+   <property name="text">
+    <string>Ciclo while</string>
+   </property>
+  </action>
+  <action name="AFCicloFor">
+   <property name="text">
+    <string>Ciclo for</string>
    </property>
   </action>
  </widget>

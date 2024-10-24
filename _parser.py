@@ -225,7 +225,6 @@ class Parser:
         if self.current_token.type == 'STRING':
             expression = self.current_token.value
             self.advance()
-            self.set_variable_value(var_name, expression)
             return 'assignment', var_name, expression
         expression = self.parse_expresion()
         return 'assignment', var_name, expression
@@ -274,11 +273,16 @@ class Parser:
         return left_value
 
     def parse_valor_o_variable(self):
-        if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER' or self.current_token.type == 'STRING':
+        if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'STRING':
             value = self.current_token.value
             self.advance()
             if self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
                 value = self.parse_function_call(value)
+            print('El value de la variable va a ser ', value, ' y el tipo ', type(value))
+            return value
+        elif self.current_token.type == 'NUMBER':
+            value = float(self.current_token.value)
+            self.advance()
             return value
         elif self.current_token.type == 'BOOLEAN':
             value = self.current_token.value.lower() == 'true'
@@ -341,37 +345,43 @@ class Parser:
         self.conditional_stack.pop()
         return 'else', ('body', body)
 
-    def parse_expression(self):
-        left_value = self.current_token.value
-        self.advance()
+    #def parse_expression(self):
+     #  self.advance()
 
-        if self.current_token.type == 'ARITHMETIC_OPERATOR':
-            operator = self.current_token.value
-            self.advance()
-            right_value = self.current_token.value
-            self.advance()
-            return 'arithmetic_expression', left_value, operator, right_value
+      #  if self.current_token.type == 'OPERATOR':
+       #     operator = self.current_token.value
+        #    self.advance()
+         #   right_value = self.current_token.value
+          #  self.advance()
+           # return 'arithmetic_expression', left_value, operator, right_value
 
-        return left_value
+        #return left_value
+
     def parse_condition(self):
-
         if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
-            value1 = self.parse_expression()
+            value1 = self.parse_expresion()
 
             comparator = self.current_token.value
             self.expect('COMPARATOR')
-
-            if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
-                value2 = self.parse_expression()
+            print('El valor del currrent token es ', self.current_token)
+            if self.current_token.type == 'IDENTIFIER':
+                value2 = self.parse_expresion()
                 condition_node = ('comparison', value1, comparator, value2)
-
                 if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
                     log_op = self.current_token.value
                     self.advance()
                     next_condition = self.parse_condition()
                     return 'logical_expression', condition_node, log_op, next_condition
                 return condition_node
-
+            elif self.current_token.type == 'NUMBER':
+                value2 = float(self.parse_expresion())
+                condition_node = ('comparison', value1, comparator, value2)
+                if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
+                    log_op = self.current_token.value
+                    self.advance()
+                    next_condition = self.parse_condition()
+                    return 'logical_expression', condition_node, log_op, next_condition
+                return condition_node
             elif self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
                 self.advance()
                 nested_condition = self.parse_condition()
@@ -389,10 +399,9 @@ class Parser:
                     f"Se esperaba un identificador, número o paréntesis después del comparador, pero se encontró {self.current_token}")
 
         elif self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
-            # Inicio de una sub-condición entre paréntesis
             self.advance()
             nested_condition = self.parse_condition()
-            self.expect('DELIMETER')  # Cierre de paréntesis
+            self.expect('DELIMETER')
             if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
                 log_op = self.current_token.value
                 self.advance()
@@ -531,14 +540,3 @@ class Parser:
         for_body = self.parse_main_o_loop_body()
         print('Antes de retornar ')
         return 'for', condition, for_body
-
-    def get_variable_value(self, variable_name):
-        if variable_name in self.symbols_table:
-            if self.symbols_table[variable_name].get('type', None) == 'variable':
-                return self.symbols_table[variable_name].get('value')
-        raise NameError(f"Se esta intentando acceder al valor de un elemento de la tabla de simbolos que no existe o no es una variable")
-
-    def set_variable_value(self, variable_name, value):
-        if variable_name in self.symbols_table:
-            if self.symbols_table[variable_name].get('type', None) == 'variable':
-                self.symbols_table[variable_name].set('value', value)
