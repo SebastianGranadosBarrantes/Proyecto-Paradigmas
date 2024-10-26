@@ -26,6 +26,7 @@ class MainWindow(QMainWindow):
         self.ui.Btn_Ejecutar.clicked.connect(self.run_handler)
         self.ui.AFCicloFor.triggered.connect(self.for_loop_example_handler)
         self.lexer = Lexer('')
+        self.ui.TxtSalida.setReadOnly(True)
 
     def function_example_handler(self):
         function_text = """funcioncita calcular_area_circulo(float radio) : float {
@@ -95,8 +96,7 @@ main(){
 }"""
         self.ui.Txt_Codigo.setText(conditional_text)
         self.model = TextModel()
-        self.text_edit = self.ui.Txt_Consola  # Accessing QTextEdit from the UI
-        self.setup_bindings()
+        self.text_edit = self.ui.Txt_Consola
 
     def while_loop_example_handler(self):
         while_text = """procedimienton verificar_valores(entero a, entero b) {            
@@ -171,26 +171,6 @@ main() {
         """
         self.ui.Txt_Codigo.setText(for_text)
 
-    def setup_bindings(self):
-        # When the model changes, update the QTextEdit
-        self.model.text_changed.connect(self.text_edit.setPlainText)
-
-        # When the model changes, update the QLabel
-        self.model.text_changed.connect(self.ui.Txt_Consola.setText)
-
-        # When the text in QTextEdit changes, update the model
-        self.text_edit.textChanged.connect(self.update_model_from_text_edit)
-
-    def update_model_from_text_edit(self):
-        # Update the model's text when the text in the QTextEdit changes
-        new_text = self.text_edit.toPlainText()
-        self.model.text = new_text
-        self.print_text_to_console()
-
-    def print_text_to_console(self):
-        # Print the current text in the QTextEdit to the console
-        current_text = self.text_edit.toPlainText()
-        print(f"Current Text in QTextEdit: {current_text}")
 
     def compile_handler(self):
         print('Se ejecuta')
@@ -223,16 +203,23 @@ main() {
                                 """)
                 QMessageBox.information(self,'Compilación correcta', 'Se compilo el código correctamente')
             except SyntaxError as e:
-                QMessageBox.critical(self, 'Error', str(e))
+                QMessageBox.critical(self, 'Error en compilación', str(e))
                 print(e)
             except Exception as e:
                 print('Paso un error ')
-                QMessageBox.critical(self, 'Error inesperado', f"{str(e)}")
+                QMessageBox.critical(self, 'Error inesperado en compilación ', f"{str(e)}")
                 print(f"Error al parsear {e}")
 
     def run_handler(self):
         self.interpreter = Interpreter(self.parser.tree)
-        self.interpreter.interpret()
+        try:
+            self.interpreter.interpret()
+        except ValueError as e:
+            QMessageBox.critical(self, 'Error de valores', str(e))
+        except Exception as e:
+            print('Paso un error')
+            QMessageBox.critical(self, 'Error inesperado en la ejecución ', f"{str(e)}")
+
         outputs = ''
         print(self.interpreter.outputs)
         for output in self.interpreter.outputs:

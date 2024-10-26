@@ -3,7 +3,6 @@ class Parser:
         self.tokens = tokens
         self.pos = 0
         self.current_token = self.tokens[self.pos]
-        self.symbols_table = {}
         self.conditional_stack = []
         self.tree = None
         self.in_function = False
@@ -53,17 +52,12 @@ class Parser:
         self.in_function = True
         function_name = self.parse_identificador()
         self.function_name = function_name
-        self.verify_in_symbols_table(function_name, 'global')
         self.expect('DELIMETER', '(')
         parameters = self.parse_parameters_def()
-        for _type, name in parameters:
-            self.verify_in_symbols_table(name, _type)
 
         self.expect('DELIMETER', ')')
         self.expect('DELIMETER', ':')
         type_return = self.parse_type_return()
-        self.symbols_table[function_name] = {"type": "function", "data_type": type_return, "scope": "Global",
-                                             "parameters": parameters}
         self.expect('DELIMETER', "{")
         cuerpo_funcion = self.parse_function_procedure_body('funcioncita')
         self.expect('DELIMETER', "}")
@@ -85,7 +79,6 @@ class Parser:
         self.expect('DELIMETER', '}')
         self.in_function = False
         self.function_name = ""
-        self.symbols_table[prc_name] = {"type": "procedure", "scope": "Global", "parameters": parameters}
         return 'procedure', prc_name, parameters, prc_body
 
     def parse_parameters_def(self):
@@ -150,29 +143,12 @@ class Parser:
         self.expect('DATATYPE')
         identifier = self.parse_identificador()
         print('El identifier parseado es ', identifier)
-        if identifier in self.symbols_table:
-            raise SyntaxError(f"La variable {identifier} ya existe!")
 
         if self.current_token.type == 'ASSIGNMENT':
             value = self.parse_asignacion(identifier)
-
-            if self.in_function:
-                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type,
-                                                  "scope": self.function_name, "value": value}
-            else:
-                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "global",
-                                                  "value": value}
             return 'var_declaration', data_type, identifier, value
         else:
-            if self.in_function:
-                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type,
-                                                  "scope": self.function_name, "value": ""}
-            else:
-                self.symbols_table[identifier] = {"type": "variable", "data_type": data_type, "scope": "global",
-                                                  "value": ""}
             return 'var_declaration', data_type, identifier
-
-        # cada una de las lineas del body
 
     def parse_statement(self):
         if self.current_token.type == 'IDENTIFIER':
@@ -281,7 +257,10 @@ class Parser:
             print('El value de la variable va a ser ', value, ' y el tipo ', type(value))
             return value
         elif self.current_token.type == 'NUMBER':
-            value = float(self.current_token.value)
+            if '.' in self.current_token.value:
+                value = float(self.current_token.value)
+            else:
+                value = int(self.current_token.value)
             self.advance()
             return value
         elif self.current_token.type == 'BOOLEAN':
@@ -451,10 +430,6 @@ class Parser:
             return 'input', var_save
         else:
             raise SyntaxError(f"Se esperaba un argumento valido pero se encontro {self.current_token}")
-
-    def verify_in_symbols_table(self, symbol_name, scope):
-        if symbol_name in self.symbols_table and scope == 'local':
-            raise SyntaxError(f"El objeto {symbol_name} ya existe!")
 
     def parse_main(self):
         self.advance()

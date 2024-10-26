@@ -125,7 +125,17 @@ background-color: rgb(41, 178, 190);
       </widget>
      </item>
      <item>
-      <widget class="QTextEdit" name="TxtSalida"/>
+      <widget class="QTextEdit" name="TxtSalida">
+       <property name="cursor" stdset="0">
+        <cursorShape>ArrowCursor</cursorShape>
+       </property>
+       <property name="mouseTracking">
+        <bool>false</bool>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -218,16 +228,31 @@ background-color: rgb(41, 178, 190);
     <property name="title">
      <string>Archivo</string>
     </property>
-    <addaction name="separator"/>
     <addaction name="actionAbrir"/>
+    <addaction name="separator"/>
     <addaction name="actionNuevo"/>
+    <addaction name="separator"/>
     <addaction name="actionGuardar"/>
+    <addaction name="separator"/>
     <addaction name="actionGuardar_como"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuOpciones">
     <property name="title">
-     <string>Opciones</string>
+     <string>Funcionalidades</string>
     </property>
+    <addaction name="AFInsertComentario"/>
+    <addaction name="separator"/>
+    <addaction name="AFInsertWhile"/>
+    <addaction name="separator"/>
+    <addaction name="AFInsertFor"/>
+    <addaction name="separator"/>
+    <addaction name="AFInsertMain"/>
+    <addaction name="separator"/>
+    <addaction name="AFInsertFunction"/>
+    <addaction name="separator"/>
+    <addaction name="AFInsertProcedure"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuEjemplos">
     <property name="title">
@@ -300,6 +325,36 @@ background-color: rgb(41, 178, 190);
   <action name="AFCicloFor">
    <property name="text">
     <string>Ciclo for</string>
+   </property>
+  </action>
+  <action name="AFInsertComentario">
+   <property name="text">
+    <string>Insertar comentario</string>
+   </property>
+  </action>
+  <action name="AFInsertWhile">
+   <property name="text">
+    <string>Insertar esqueleto while</string>
+   </property>
+  </action>
+  <action name="AFInsertFor">
+   <property name="text">
+    <string>Insertar esqueleto for</string>
+   </property>
+  </action>
+  <action name="AFInsertMain">
+   <property name="text">
+    <string>Insertar esqueleto main</string>
+   </property>
+  </action>
+  <action name="AFInsertFunction">
+   <property name="text">
+    <string>Insertar esqueleto function</string>
+   </property>
+  </action>
+  <action name="AFInsertProcedure">
+   <property name="text">
+    <string>Insertar esqueleto procedure</string>
    </property>
   </action>
  </widget>
