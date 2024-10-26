@@ -57,6 +57,8 @@ class Interpreter:
             self.visit_print(node)
         elif node_type == 'retorna':
             return self.visit_return(node)
+        elif node_type == 'input':
+            self.visit_read(node)
         else:
             raise ValueError(f"Tipo de nodo desconocido: {node_type}")
 
@@ -127,11 +129,13 @@ class Interpreter:
             left = self.evaluate_expression(expr[1])
             operator = expr[2]
             right = self.evaluate_expression(expr[3])
+
             if operator == '*':
                 print('Entra a multi')
                 return float(left) * float(right)
             elif operator == '+':
-                print('Entra a suma')
+                if isinstance(left, str) and isinstance(right, str):
+                    return left + right
                 return float(left) + float(right)
             elif operator == '-':
                 print('Entra a resta')
@@ -147,7 +151,7 @@ class Interpreter:
 
         elif isinstance(expr, str) and expr.startswith('"') and expr.endswith('"'):
             print('Entra como is fuera un string ')
-            return expr.strip('')
+            return expr.strip('""')
         elif isinstance(expr, tuple) and expr[0] == 'llamada_funcion':
             print('Entra a llamar la función ')
             return self.visit_function_call(expr)
@@ -341,3 +345,7 @@ class Interpreter:
             return bool
         elif data_type == 'char':
             return str
+
+    def visit_read(self, node):
+        _, var_save = node
+
