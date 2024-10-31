@@ -2,7 +2,7 @@
 import re
 
 token_patterns = [
-    ('KEYWORD', r'(?i)\b(si|sino|while|retorna|tons|mientras|haga)\b'),
+    ('KEYWORD', r'(?i)\b(si|sino|while|retorna|tons|mientras|haga|casos)\b'),
     ('FUNCTION', r'(?i)\b(funcioncita)\b'),
     ('NEWLINE', r'(?i)\b(salto)\b'),
     ('PROCEDURE', r'(?i)\b(procedimienton)\b'),

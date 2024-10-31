@@ -1,20 +1,23 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox, QTextEdit
 from IDEController import Ui_MainWindow
 from lexer import Lexer
 from _parser import Parser
 from d2Binder import TextModel
 from interpreter import Interpreter
+from PyQt6.QtCore import Qt
+from PyQt6.QtCore import pyqtSignal
 
 
 class MainWindow(QMainWindow):
-
+    input_ready = pyqtSignal(str)
     def __init__(self):
         super().__init__()
         self.parser = None
         self.model = None
         self.text_edit = None
         self.interpreter = None
+        self.input_text = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.Btn_Compilar.clicked.connect(self.compile_handler)
@@ -27,6 +30,8 @@ class MainWindow(QMainWindow):
         self.ui.AFCicloFor.triggered.connect(self.for_loop_example_handler)
         self.lexer = Lexer('')
         self.ui.TxtSalida.setReadOnly(True)
+        self.ui.Txt_Consola.installEventFilter(self)
+        self.ui.Txt_Consola.setReadOnly(True)
 
     def function_example_handler(self):
         function_text = """funcioncita calcular_area_circulo(float radio) : float {
@@ -173,8 +178,10 @@ main() {
 
 
     def compile_handler(self):
-        print('Se ejecuta')
         text = self.ui.Txt_Codigo.toPlainText()
+        self.ui.Txt_Consola.clear()
+        self.ui.TxtSalida.clear()
+        self.ui.Txt_Consola.setReadOnly(True)
         if text == "":
             QMessageBox.warning(self, 'Advertencia', '¡Se esta intentando compilar cuando no hay código que compilar!')
 
@@ -211,20 +218,50 @@ main() {
                 print(f"Error al parsear {e}")
 
     def run_handler(self):
-        self.interpreter = Interpreter(self.parser.tree)
-        try:
-            self.interpreter.interpret()
-        except ValueError as e:
-            QMessageBox.critical(self, 'Error de valores', str(e))
-        except Exception as e:
-            print('Paso un error')
-            QMessageBox.critical(self, 'Error inesperado en la ejecución ', f"{str(e)}")
+        if self.parser is None:
+            QMessageBox.critical(self, 'Error al momento de ejecutar','NO se puede ejecutar sin antes compilar')
+        else:
+            self.ui.TxtSalida.clear()
+            try:
+                self.interpreter = Interpreter(self.parser.tree)
+                self.interpreter.request_input.connect(self.handle_input)
+                self.input_ready.connect(self.interpreter.input_ready.emit)
+                self.interpreter.input_type_error.connect(self.handle_input_error)
+                self.interpreter.interpret()
+            except ValueError as e:
+                QMessageBox.critical(self, 'Error de valores', str(e))
+            except Exception as e:
+                print('Paso un error')
+                QMessageBox.critical(self, 'Error inesperado en la ejecución ', f"{str(e)}")
 
-        outputs = ''
-        print(self.interpreter.outputs)
-        for output in self.interpreter.outputs:
-            outputs += str(output)
-        self.ui.TxtSalida.setPlainText(outputs)
+            outputs = ''
+            print(self.interpreter.outputs)
+            for output in self.interpreter.outputs:
+                outputs += str(output)
+            self.ui.TxtSalida.setPlainText(outputs)
+
+    def handle_input(self):
+        self.ui.Txt_Consola.setReadOnly(False)
+        self.ui.Txt_Consola.setText('>')
+        #QMessageBox.information(self, "Consola habilitada" "Se ha habilitado la consola para un input")
+        self.input_text = ""
+        print("Esperando entrada del usuario...")
+
+    def eventFilter(self, source, event):
+        # Verifica si el evento es para Txt_Consola y si es la tecla Enter
+        if source == self.ui.Txt_Consola and event.type() == event.Type.KeyPress:
+            if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                # Captura el texto ingresado
+                self.input_text = self.ui.Txt_Consola.toPlainText().strip().lstrip(">")
+                self.ui.Txt_Consola.clear()
+                self.ui.Txt_Consola.setReadOnly(True)
+                print(f"Entrada recibida: {self.input_text}")
+                self.input_ready.emit(self.input_text)  # Emite la señal con el texto
+                return True  # Indica que el evento fue manejado
+        return super().eventFilter(source, event)
+
+    def handle_input_error(self):
+        QMessageBox.critical(self, 'Input incorrecto ', 'Se esta ingresando un tipo de dato incorrecto en el input')
 
 
 if __name__ == "__main__":

@@ -1,19 +1,31 @@
-class Interpreter:
+from PyQt6.QtCore import QObject, pyqtSignal, QEventLoop
+
+
+class Interpreter(QObject):
+    input_ready = pyqtSignal(str)
+    request_input = pyqtSignal()
+    input_type_error = pyqtSignal()
     def __init__(self, tree):
+        super().__init__()
+        self.input_loop = None
+        self.input_callback = None
         self.tree = tree
         self.symbols_table = {}
         self.functions = {}
         self.current_scope = None
         self.outputs = []
         self.already_encountered = False
+        self.input_ready.connect(self.process_input)
+        self.on_execution = True
 
     def interpret(self):
         for node in self.tree:
-            if node[0] == 'function' or node[0] == 'procedure':
-                self.visit(node)
-            elif node[0] == 'var_declaration':
-                self.current_scope = 'global'
-                self.visit(node)
+            if self.on_execution:
+                if node[0] == 'function' or node[0] == 'procedure':
+                    self.visit(node)
+                elif node[0] == 'var_declaration':
+                    self.current_scope = 'global'
+                    self.visit(node)
 
         main_node = None
         for node in self.tree:
@@ -60,6 +72,7 @@ class Interpreter:
         elif node_type == 'input':
             self.visit_read(node)
         else:
+            self.on_execution = False
             raise ValueError(f"Tipo de nodo desconocido: {node_type}")
 
     def visit_function(self, node):
@@ -74,7 +87,11 @@ class Interpreter:
         _ = node[0]
         var_type = node[1]
         var_name = node[2]
-        self.symbols_table[var_name+self.current_scope] = {'type': 'variable', 'data_type': var_type, 'value': None, 'scope': self.current_scope}
+        if var_name + self.current_scope not in self.symbols_table:
+            self.symbols_table[var_name+self.current_scope] = {'type': 'variable', 'data_type': var_type, 'value': None, 'scope': self.current_scope}
+        else:
+            self.on_execution = False
+            raise ValueError(f'Una variable con nombre {var_name} ya existe en el scope {self.current_scope}')
         print(f"Declaración de variable {var_name} de tipo {var_type}.")
         if len(node) == 4:
             self.visit_assignment(node[3])
@@ -109,6 +126,7 @@ class Interpreter:
         if isinstance(value, expected_type):
             if self.symbols_table[var_name+self.current_scope]['data_type'] == 'char':
                 if len(value) > 1:
+                    self.on_execution = False
                     raise ValueError(f"Una variable de tipo char solo puede almacenar un carácter")
 
             print(f"Asignando {value} a la variable {var_name} con scope {self.current_scope}")
@@ -116,6 +134,7 @@ class Interpreter:
         else:
             print('entra al else de exception')
             print('El var name es ', var_name)
+            self.on_execution = False
             raise ValueError(
                 f"Se esperaba un valor de tipo {self.symbols_table[var_name+self.current_scope]['data_type']}, pero se encontró {type(value).__name__}")
 
@@ -147,6 +166,7 @@ class Interpreter:
                 print('Entra a modulo')
                 return float(left) % float(right)
             else:
+                self.on_execution = False
                 raise ValueError(f"Operador aritmético desconocido: {operator}")
 
         elif isinstance(expr, str) and expr.startswith('"') and expr.endswith('"'):
@@ -200,7 +220,6 @@ class Interpreter:
                     self.symbols_table[param_name+function_name]['value'] = self.symbols_table[arguments[i]+self.current_scope]['value']
 
         before_scope = self.current_scope
-        print('llega hasta aca')
         self.current_scope = function_name
         executed_function_body = self.execute_body(body)
         self.current_scope = before_scope
@@ -315,6 +334,7 @@ class Interpreter:
         elif operator == '<=':
             return left <= right
         else:
+            self.on_execution = False
             raise ValueError(f"Operador de comparación desconocido: {operator}")
 
     def apply_logical_operator(self, left, operator, right):
@@ -323,6 +343,7 @@ class Interpreter:
         elif operator == '||':
             return left or right
         else:
+            self.on_execution = False
             raise ValueError(f"Operador lógico desconocido: {operator}")
 
     def print_symbols_table(self):
@@ -346,6 +367,53 @@ class Interpreter:
         elif data_type == 'char':
             return str
 
-    def visit_read(self, node):
-        _, var_save = node
+    def cast_from_console(self, inputc, data_type):
+        print('Llegamos aca')
+        print('El data type es ', data_type)
+        print('El valor es ', inputc)
+        try:
+            if data_type == 'entero':
+                return int(inputc)
+            elif data_type == 'float':
+                return float(inputc)
+            elif data_type == 'string':
+                return inputc
+            elif data_type == 'boolean':
+                if inputc.lower() in ["true", "false"]:
+                    return inputc.lower() == "true"
+                self.on_execution = False
+                self.input_type_error.emit()
+            elif data_type == 'char':
+                if len(inputc) == 1:
+                    return inputc
+                self.on_execution = False
+                self.input_type_error.emit()
 
+        except Exception as e:
+            print(f"Error al intentar convertir '{inputc}' a {data_type}: {e}")
+            self.on_execution = False
+            self.input_type_error.emit()
+
+    def visit_read(self, node):
+            _, var_save = node
+            print("Esperando entrada del usuario...")
+            self.input_callback = lambda user_input: self.assign_input_to_variable(user_input, var_save)
+            self.request_input.emit()
+            self.input_loop = QEventLoop()
+            self.input_loop.exec()
+
+    def process_input(self, user_input):
+        if self.input_callback:
+            self.input_callback(user_input)
+        # Detener el Event Loop para que `visit_read` continúe
+        if self.input_loop and self.input_loop.isRunning():
+            print('se va a detener el event loop')
+            self.input_loop.quit()
+
+    def assign_input_to_variable(self, user_input, var_save):
+        # Convertir el input según el tipo de dato esperado y almacenarlo
+        expected_type = self.symbols_table[var_save + self.current_scope]['data_type']
+        casted_value = self.cast_from_console(user_input, expected_type)
+        print('no llega')
+        self.symbols_table[var_save + self.current_scope]['value'] = casted_value
+        print(f"Guardado en {var_save}: {casted_value}")

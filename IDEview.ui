@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>978</width>
-    <height>657</height>
+    <width>976</width>
+    <height>639</height>
    </rect>
   </property>
   <property name="font">
@@ -220,7 +220,7 @@ background-color: rgb(41, 178, 190);
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>978</width>
+     <width>976</width>
      <height>21</height>
     </rect>
    </property>
@@ -243,6 +243,8 @@ background-color: rgb(41, 178, 190);
     </property>
     <addaction name="AFInsertComentario"/>
     <addaction name="separator"/>
+    <addaction name="actionInsertar_input"/>
+    <addaction name="separator"/>
     <addaction name="AFInsertWhile"/>
     <addaction name="separator"/>
     <addaction name="AFInsertFor"/>
@@ -252,6 +254,8 @@ background-color: rgb(41, 178, 190);
     <addaction name="AFInsertFunction"/>
     <addaction name="separator"/>
     <addaction name="AFInsertProcedure"/>
+    <addaction name="separator"/>
+    <addaction name="actionInsertar_output"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuEjemplos">
@@ -270,6 +274,8 @@ background-color: rgb(41, 178, 190);
     <addaction name="AFCicloWhile"/>
     <addaction name="separator"/>
     <addaction name="AFCicloFor"/>
+    <addaction name="separator"/>
+    <addaction name="AFSwitch"/>
     <addaction name="separator"/>
    </widget>
    <addaction name="menuNuevo"/>
@@ -355,6 +361,21 @@ background-color: rgb(41, 178, 190);
   <action name="AFInsertProcedure">
    <property name="text">
     <string>Insertar esqueleto procedure</string>
+   </property>
+  </action>
+  <action name="AFSwitch">
+   <property name="text">
+    <string>Switch</string>
+   </property>
+  </action>
+  <action name="actionInsertar_input">
+   <property name="text">
+    <string>Insertar input</string>
+   </property>
+  </action>
+  <action name="actionInsertar_output">
+   <property name="text">
+    <string>Insertar output</string>
    </property>
   </action>
  </widget>
