@@ -112,14 +112,11 @@ class Parser:
             raise SyntaxError(f"Se esperaba un type de retorno, pero se encontró {self.current_token}")
 
     def parse_function_procedure_body(self, _type):
-        print('dentro de parse function body')
         statements = []
         open_braces = 1
         while open_braces > 0:
             if self.current_token.type == 'DELIMETER' and self.current_token.value == '{':
-                print('el valor de open braces antes del incremento es ', open_braces)
                 open_braces += 1
-                print('el valor de open braces despues del incremento es ', open_braces)
                 self.advance()
             elif self.current_token.type == 'DELIMETER' and self.current_token.value == '}':
                 open_braces -= 1
@@ -133,7 +130,6 @@ class Parser:
                 valor_retorno = self.parse_valor_o_variable()
                 statements.append(('retorna', valor_retorno))
             else:
-                print('vamos a parsear ', self.current_token)
                 statement = self.parse_statement()
                 statements.append(statement)
         return 'function_body', statements
@@ -151,6 +147,7 @@ class Parser:
             return 'var_declaration', data_type, identifier
 
     def parse_statement(self):
+        print('El current token es ', self.current_token)
         if self.current_token.type == 'IDENTIFIER':
             print('El valor del identifier es ', self.current_token.value)
             sta_name = self.current_token.value
@@ -188,10 +185,13 @@ class Parser:
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'haga':
             self.advance()
             return self.parse_for()
+        elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'casos':
+            return self.parse_switch()
         elif self.current_token.type == 'IO' and self.current_token.value.lower() == 'escriba':
             return self.parse_io_print()
         elif self.current_token.type == 'IO' and self.current_token.value.lower() == 'lea':
             return self.parse_io_read()
+
         else:
             print('Se va al else')
             raise SyntaxError(f"Sentencia inesperada {self.current_token.value} en la línea {self.current_token.line}")
@@ -324,18 +324,6 @@ class Parser:
         self.conditional_stack.pop()
         return 'else', ('body', body)
 
-    #def parse_expression(self):
-     #  self.advance()
-
-      #  if self.current_token.type == 'OPERATOR':
-       #     operator = self.current_token.value
-        #    self.advance()
-         #   right_value = self.current_token.value
-          #  self.advance()
-           # return 'arithmetic_expression', left_value, operator, right_value
-
-        #return left_value
-
     def parse_condition(self):
         if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
             value1 = self.parse_expresion()
@@ -444,7 +432,6 @@ class Parser:
         statements = []
         while open_braces > 0:
             if self.current_token.type == 'DELIMETER' and self.current_token.value == '}':
-                print(f"El dentro del if delimeter es {self.current_token}")
                 open_braces -= 1
                 self.advance()
             elif self.current_token.type == 'DELIMETER' and self.current_token.value == '{':
@@ -454,6 +441,60 @@ class Parser:
                 statement = self.parse_statement()
                 statements.append(statement)
         return 'main_body', statements
+
+    def parse_switch(self):
+        print('entra al switch')
+        self.advance()
+        self.expect('DELIMETER', '(')
+        variable = self.current_token.value
+        print('El valor que estamos agarrando de variable es ', variable)
+        self.expect('IDENTIFIER')
+        self.expect('DELIMETER', ')')
+        self.expect('DELIMETER', '{')
+        switch_body = self.parse_switch_body(variable)
+        self.expect('DELIMETER', '}')
+        print(f"El valor del switch de salida es {variable}, {switch_body}")
+        return 'switch', variable, switch_body
+
+    def parse_switch_body(self, variable):
+        switch_cases = []
+        defecto = False
+        while True:
+            if self.current_token.type == 'KEYWORD' and self.current_token.value == 'caso':
+                self.advance()
+                self.expect('DELIMETER', '(')
+                condition = self.parse_condition()
+                print('El condition es ', condition)
+                if not self.contains_variable(condition, variable):
+                    raise SyntaxError(f"La condicion de un caso debe incluir la variable especificada {variable}")
+                print(f"El condition del caso es {condition}")
+                self.expect('DELIMETER', ')')
+                self.expect('DELIMETER', '{')
+                case_body = self.parse_main_o_loop_body()
+                switch_cases.append(('case', condition, case_body))
+            elif self.current_token.type == 'KEYWORD' and self.current_token.value == 'defecto' and not defecto:
+                self.advance()
+                self.expect('DELIMETER', '{')
+                default_body = self.parse_main_o_loop_body()
+                defecto = True
+                switch_cases.append(('default', default_body))
+            elif self.current_token.type == 'KEYWORD' and self.current_token.value == 'defecto' and defecto:
+                raise SyntaxError(f"Un switch(casos) no puede tener multiples default(defecto)")
+            elif self.current_token.type == 'DELIMETER' and self.current_token.value == '}': # Se encontro el caracter terminal del switch body
+                break
+            else:
+                raise SyntaxError(f"Se esperaba un caso de los casos, pero se encontro {self.current_token}")
+        return switch_cases
+
+    def contains_variable(self,condition, variable):
+        if isinstance(condition, tuple) and condition[0] == 'comparison':
+            return variable == condition[1]
+        elif isinstance(condition, tuple) and condition[0] == 'logical_expression':
+            left_expr = condition[1]
+            right_expr = condition[3]
+            return self.contains_variable(left_expr, variable) or self.contains_variable(right_expr, variable)
+
+        return False
 
     def parse_while(self):
         print('El token con el que entra a parse while es ', self.current_token)
@@ -515,3 +556,4 @@ class Parser:
         for_body = self.parse_main_o_loop_body()
         print('Antes de retornar ')
         return 'for', condition, for_body
+

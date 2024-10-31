@@ -60,6 +60,8 @@ class Interpreter(QObject):
             if not self.already_encountered:
                 self.visit_else(node)
             self.already_encountered = False
+        elif node_type == 'switch':
+            self.visit_switch(node)
         elif node_type == 'while':
             self.visit_while(node)
         elif node_type == 'for':
@@ -202,7 +204,6 @@ class Interpreter(QObject):
         if function_name not in self.functions:
             raise NameError(f"Función {function_name} no definida.")
 
-        # Obtener la función
         function = self.functions[function_name]
         parameters = function['parameters']
         body = function['body']
@@ -228,7 +229,7 @@ class Interpreter(QObject):
     def visit_if(self, node):
         _, condition, body = node
         if self.evaluate_condition(condition):
-            self.already_encountered = True
+            self.already_encountered = True #TODO Esto para que sirve
             self.execute_body(body)
 
     def visit_while(self, node):
@@ -245,13 +246,6 @@ class Interpreter(QObject):
         self.symbols_table[init_var+self.current_scope] = { 'type': 'variable', 'data_type': 'entero', 'value': init_value, 'scope': self.current_scope}
         condition = loop_data['condition']
         increment = loop_data['increment']
-        print('El current scope es ', self.current_scope)
-        print('El valor de la variable contador es ', self.symbols_table[init_var+self.current_scope])
-        print('El condition es ', condition)
-        print('El increment es ', increment)
-        print('El body del while es: ', body)
-        print('El init value es ', init_value)
-        print('El resultado del condition es ', self.evaluate_condition(condition))
         while self.evaluate_condition(condition):
             print('El valor actual de la variable contador es ', self.symbols_table[init_var+self.current_scope]['value'])
             self.execute_body(body)
@@ -315,7 +309,9 @@ class Interpreter(QObject):
             print('El operador es ', operator)
             return self.apply_comparator(left_value, operator, right_value)
         elif condition[0] == 'logical_expression':
+            print('Enta al logical expresion ')
             left_expr, operator, right_expr = condition[1:]
+
             left_result = self.evaluate_condition(left_expr)
             right_result = self.evaluate_condition(right_expr)
             return self.apply_logical_operator(left_result, operator, right_result)
@@ -338,9 +334,9 @@ class Interpreter(QObject):
             raise ValueError(f"Operador de comparación desconocido: {operator}")
 
     def apply_logical_operator(self, left, operator, right):
-        if operator == '&&':
+        if operator == 'and':
             return left and right
-        elif operator == '||':
+        elif operator == 'or':
             return left or right
         else:
             self.on_execution = False
@@ -405,15 +401,34 @@ class Interpreter(QObject):
     def process_input(self, user_input):
         if self.input_callback:
             self.input_callback(user_input)
-        # Detener el Event Loop para que `visit_read` continúe
         if self.input_loop and self.input_loop.isRunning():
             print('se va a detener el event loop')
             self.input_loop.quit()
 
     def assign_input_to_variable(self, user_input, var_save):
-        # Convertir el input según el tipo de dato esperado y almacenarlo
         expected_type = self.symbols_table[var_save + self.current_scope]['data_type']
         casted_value = self.cast_from_console(user_input, expected_type)
         print('no llega')
         self.symbols_table[var_save + self.current_scope]['value'] = casted_value
         print(f"Guardado en {var_save}: {casted_value}")
+
+    def visit_switch(self, node):
+        _, variable, body = node
+        print(f"La variable es {variable} y el body es {body}")
+        print('El valor de [0][0] de body es ', body[0][0])
+        satisfied_case = False
+        while not satisfied_case and len(body) > 0:
+            print('Estamos dentro del while ')
+            print('El body len es ', len(body))
+            print('El body es ', body)
+            if body[0][0] == "case":
+                _, condition, case_body = body.pop(0)
+                if self.evaluate_condition(condition):
+                    satisfied_case = True
+                    self.execute_body(case_body)
+            elif body[0][0] == "default" and len(body) == 1:
+                #satisfied_case = True
+                _, dbody = body.pop(0)
+                self.execute_body(dbody)
+
+

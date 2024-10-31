@@ -2,12 +2,12 @@
 import re
 
 token_patterns = [
-    ('KEYWORD', r'(?i)\b(si|sino|while|retorna|tons|mientras|haga|casos)\b'),
+    ('KEYWORD', r'(?i)\b(si|sino|while|retorna|tons|mientras|haga|casos|caso|defecto)\b'),
     ('FUNCTION', r'(?i)\b(funcioncita)\b'),
     ('NEWLINE', r'(?i)\b(salto)\b'),
     ('PROCEDURE', r'(?i)\b(procedimienton)\b'),
     ('IO', r'(?i)\b(lea|escriba)\b'),
-    ('DATATYPE', r'(?i)\b(entero|char|bool|string|float|lista|arreglo)\b'),
+    ('DATATYPE', r'(?i)\b(entero|char|bool|string|float|pila|arreglo)\b'),
     ('MAIN', r'(?i)\b(main)\b'),
     ('LOGICAL_OPERATOR', r'(?i)\b(and|or|not)\b'),
     ('IDENTIFIER', r'\b[a-zA-Z_][a-zA-Z_0-9]*\b'),
