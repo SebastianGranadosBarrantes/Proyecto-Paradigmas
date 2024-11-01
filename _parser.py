@@ -2,7 +2,7 @@ class Parser:
     def __init__(self, tokens):
         self.tokens = tokens
         self.pos = 0
-        self.current_token = self.tokens[self.pos]
+        self.current_token = self.tokens[self.pos] if self.tokens else None
         self.conditional_stack = []
         self.tree = None
         self.in_function = False

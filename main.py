@@ -7,13 +7,15 @@ from d2Binder import TextModel
 from interpreter import Interpreter
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSignal
+import webbrowser
+from PyQt6.QtGui import QTextCursor
 
 
 class MainWindow(QMainWindow):
     input_ready = pyqtSignal(str)
     def __init__(self):
         super().__init__()
-        self.parser = None
+        self.cursor_codigo = None
         self.model = None
         self.text_edit = None
         self.interpreter = None
@@ -29,6 +31,16 @@ class MainWindow(QMainWindow):
         self.ui.Btn_Ejecutar.clicked.connect(self.run_handler)
         self.ui.AFCicloFor.triggered.connect(self.for_loop_example_handler)
         self.ui.AFSwitch.triggered.connect(self.switch_example_handler)
+        self.ui.AFOpenDocs.triggered.connect(self.handle_open_docu)
+        self.ui.AFInsertComentario.triggered.connect(self.handle_insert_comment)
+        self.ui.AFInsertInput.triggered.connect(self.handle_insert_input)
+        self.ui.AFInsertOutput.triggered.connect(self.handle_insert_output)
+        self.ui.AFInsertWhile.triggered.connect(self.handle_insert_while_form)
+        self.ui.AFInsertFor.triggered.connect(self.handle_insert_for)
+        self.ui.AFInsertMain.triggered.connect(self.Insert_main)
+        self.ui.AFInsertFunction.triggered.connect(self.handle_insert_function)
+        self.ui.AFInsertProcedure.triggered.connect(self.handle_insert_procedure)
+
         self.lexer = Lexer('')
         self.ui.TxtSalida.setReadOnly(True)
         self.ui.Txt_Consola.installEventFilter(self)
@@ -244,6 +256,45 @@ main() {
                 QMessageBox.critical(self, 'Error inesperado en compilación ', f"{str(e)}")
                 print(f"Error al parsear {e}")
 
+    def handle_insert_comment(self):
+        self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
+        self.cursor_codigo.insertText("-*Esto es un comentario*-")
+
+    def handle_insert_for(self):
+        self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
+        self.cursor_codigo.insertText("""-*la variable contador i debe declararse antes *-
+    haga(i = 0, condición, incremento o decremento){
+        -*código a ejecutar*-
+    } """)
+
+    def handle_insert_while_form(self):
+        self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
+        self.cursor_codigo.insertText("""mientras (condición) {
+    -*Este es el body del while*-
+    }""")
+
+    def handle_insert_input(self):
+        self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
+        self.cursor_codigo.insertText("lea(variable_donde_guarda)")
+
+    def handle_insert_output(self):
+        self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
+        self.cursor_codigo.insertText("""escriba("esto es una prueba de output")""")
+
+    def handle_insert_procedure(self):
+        self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
+        self.cursor_codigo.insertText("""procedimienton nombre_funcion (tipo_parametro nombre_parametro, …)  {
+    -*codigo de la función-*
+}""")
+
+    def handle_insert_function(self):
+        self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
+        self.cursor_codigo.insertText("""funcioncita nombre_funcion (tipo_parametro nombre_parametro, …) : tipo_return{
+    -*codigo de la función-*
+    retorna valor_o_variable 
+}""")
+
+
     def run_handler(self):
         if self.parser is None:
             QMessageBox.critical(self, 'Error al momento de ejecutar','NO se puede ejecutar sin antes compilar')
@@ -289,6 +340,16 @@ main() {
 
     def handle_input_error(self):
         QMessageBox.critical(self, 'Input incorrecto ', 'Se esta ingresando un tipo de dato incorrecto en el input')
+
+    def handle_open_docu(self):
+        webbrowser.open("https://docs.google.com/document/d/1AYDq8nZ2QrqlBFc0K9J0PXMFCcTzbSHdPG41BSrHUDk/edit?usp=sharing")
+
+    def Insert_main(self):
+        self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
+        self.cursor_codigo.insertText("""main()
+    {
+        -*Este es el body del main*-
+    }""")
 
 
 if __name__ == "__main__":

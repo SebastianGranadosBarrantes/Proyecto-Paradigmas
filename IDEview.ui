@@ -243,7 +243,7 @@ background-color: rgb(41, 178, 190);
     </property>
     <addaction name="AFInsertComentario"/>
     <addaction name="separator"/>
-    <addaction name="actionInsertar_input"/>
+    <addaction name="AFInsertInput"/>
     <addaction name="separator"/>
     <addaction name="AFInsertWhile"/>
     <addaction name="separator"/>
@@ -255,7 +255,9 @@ background-color: rgb(41, 178, 190);
     <addaction name="separator"/>
     <addaction name="AFInsertProcedure"/>
     <addaction name="separator"/>
-    <addaction name="actionInsertar_output"/>
+    <addaction name="AFInsertOutput"/>
+    <addaction name="separator"/>
+    <addaction name="AFOpenDocs"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuEjemplos">
@@ -368,14 +370,19 @@ background-color: rgb(41, 178, 190);
     <string>Switch</string>
    </property>
   </action>
-  <action name="actionInsertar_input">
+  <action name="AFInsertInput">
    <property name="text">
     <string>Insertar input</string>
    </property>
   </action>
-  <action name="actionInsertar_output">
+  <action name="AFInsertOutput">
    <property name="text">
     <string>Insertar output</string>
+   </property>
+  </action>
+  <action name="AFOpenDocs">
+   <property name="text">
+    <string>Abrir Documentación del proyecto</string>
    </property>
   </action>
  </widget>
