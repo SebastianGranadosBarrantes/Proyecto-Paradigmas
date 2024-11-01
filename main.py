@@ -28,6 +28,7 @@ class MainWindow(QMainWindow):
         self.ui.AFCicloWhile.triggered.connect(self.while_loop_example_handler)
         self.ui.Btn_Ejecutar.clicked.connect(self.run_handler)
         self.ui.AFCicloFor.triggered.connect(self.for_loop_example_handler)
+        self.ui.AFSwitch.triggered.connect(self.switch_example_handler)
         self.lexer = Lexer('')
         self.ui.TxtSalida.setReadOnly(True)
         self.ui.Txt_Consola.installEventFilter(self)
@@ -176,6 +177,32 @@ main() {
         """
         self.ui.Txt_Codigo.setText(for_text)
 
+    def switch_example_handler(self):
+        switch_text ="""main(){
+    float temperatura 
+    escriba("A continuacion se le solicita una temperatura de agua para un experimento")
+    lea(temperatura)
+    
+    casos(temperatura) {
+        caso (temperatura <= 0) {
+            escriba("El agua está en estado sólido", salto)
+        }
+        caso (temperatura > 0 and temperatura < 100) {
+            escriba("El agua está en estado líquido", salto)
+        }
+        caso (temperatura >= 100 and temperatura < 150) {
+            escriba("El agua está en estado de ebullición, pero no en vapor sobrecalentado", salto)
+        }
+        caso ((temperatura >= 150 and temperatura < 300) or (temperatura == 500)) {
+            escriba("El agua está en vapor sobrecalentado o a una temperatura exacta de 500 grados", salto)
+        }
+        defecto {
+            escriba("Temperatura fuera de rango para este experimento", salto)
+        }
+    }
+}
+"""
+        self.ui.Txt_Codigo.setText(switch_text)
 
     def compile_handler(self):
         text = self.ui.Txt_Codigo.toPlainText()

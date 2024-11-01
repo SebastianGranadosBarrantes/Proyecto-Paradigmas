@@ -46,8 +46,21 @@ class Interpreter(QObject):
             self.visit_main(node)
         elif node_type == 'var_declaration':
             self.visit_var_declaration(node)
+        elif node_type == 'list_declaration' or node_type == 'stack_declaration':
+            self.visit_list_stack_declaration(node)
+        elif node_type == 'saca':
+            self.visit_saca(node)
+        elif node_type == 'mete':
+            self.visit_mete(node)
+        elif node_type == 'arriba':
+            self.visit_arriba(node)
+        elif node_type == 'obtener':
+            self.visit_obtener(node)
+        elif node_type == 'insertar':
+            self.visit_insertar(node)
+        elif node_type == 'ultimo':
+            self.visit_ultimo(node)
         elif node_type == 'assignment':
-            print('Entra al assignment ')
             self.visit_assignment(node)
         elif node_type == 'llamada_funcion':
             print('El nodo de llamada a función es ', node)
@@ -172,8 +185,10 @@ class Interpreter(QObject):
                 raise ValueError(f"Operador aritmético desconocido: {operator}")
 
         elif isinstance(expr, str) and expr.startswith('"') and expr.endswith('"'):
-            print('Entra como is fuera un string ')
+            print('Entra como si fuera un string ')
             return expr.strip('""')
+        elif isinstance(expr, str) and expr.startswith("'") and expr.endswith("'"):
+            return expr.strip("'")
         elif isinstance(expr, tuple) and expr[0] == 'llamada_funcion':
             print('Entra a llamar la función ')
             return self.visit_function_call(expr)
@@ -191,9 +206,22 @@ class Interpreter(QObject):
         print('El current scope en la impresion es: ', self.current_scope)
         print('Los argumentos son ', arguments)
         for arg in arguments:
-            if arg+self.current_scope in self.symbols_table:
+            if isinstance(arg, tuple):
+                if arg[0] == 'saca':
+                    output += str(self.visit_saca(arg))
+                elif arg[0] == 'arriba':
+                    output += str(self.visit_arriba(arg))
+                elif arg[0] == 'obtener':
+                    output += str(self.visit_obtener(arg))
+                elif arg[0] == 'ultimo':
+                    output += str(self.visit_ultimo(arg))
+                elif arg[0] == 'primero':
+                    output += str(self.visit_primero(arg))
+            elif arg+self.current_scope in self.symbols_table:
+                print('entra aca al if')
                 output += str(self.symbols_table[arg+self.current_scope]['value'])
             else:
+                print('Entra aca al else')
                 output += str(arg.replace('"', ''))
         self.outputs.append(output)
 
@@ -427,8 +455,108 @@ class Interpreter(QObject):
                     satisfied_case = True
                     self.execute_body(case_body)
             elif body[0][0] == "default" and len(body) == 1:
-                #satisfied_case = True
+                satisfied_case = True
                 _, dbody = body.pop(0)
                 self.execute_body(dbody)
 
+    def visit_list_stack_declaration(self, node):
+        if len(node) > 4:
+            _, compund_type, ptype, var_name, value = node
+            if var_name + self.current_scope not in self.symbols_table:
+                self.symbols_table[var_name + self.current_scope] = {'type': compund_type, 'data_type': ptype,
+                                                                     'value': value, 'scope': self.current_scope}
+            else:
+                self.on_execution = False
+                raise ValueError(f'Ya existe un identificador con nombre {var_name} en el scope {self.current_scope}')
+        else:
+            _, compund_type, ptype, var_name = node
+            if var_name + self.current_scope not in self.symbols_table:
+                self.symbols_table[var_name + self.current_scope] = {'type': compund_type, 'data_type': ptype,
+                                                                     'value': [], 'scope': self.current_scope}
+            else:
+                self.on_execution = False
+                raise ValueError(f'Ya existe un identificador con nombre {var_name} en el scope {self.current_scope}')
 
+    def visit_saca(self, node):
+        _, stack_name = node
+        if stack_name+self.current_scope in self.symbols_table and self.symbols_table[stack_name+self.current_scope]['type'] == 'pila':
+            value = self.symbols_table[stack_name+self.current_scope]['value']
+            if len(value) > 0:
+                extract = value.pop()
+                self.symbols_table[stack_name+self.current_scope]['value'] = value
+                return extract
+            else:
+                raise ValueError('Se esta intentando sacar el head de la pila cuando esta está vacía')
+
+        else:
+            print('Entra al else')
+            raise ValueError('Se esta indicando un onjeto que NO es una pila o NO existe')
+
+    def visit_mete(self, node):
+        _, stack_name, value = node
+        print('El tipo del value es ', type(value))
+        if stack_name+self.current_scope in self.symbols_table and self.symbols_table[stack_name+self.current_scope]['type'] == 'pila':
+            stack_value = self.symbols_table[stack_name+self.current_scope]['value']
+            if isinstance(value, self.cast_datatype(self.symbols_table[stack_name+self.current_scope]['data_type'])):
+                stack_value.append(value)
+                self.symbols_table[stack_name+self.current_scope]['value'] = stack_value
+            else:
+                raise ValueError(f"El tipo de dato de {value} no coincide con el tipo de dato especificado en la pila")
+        else:
+            raise ValueError(f"La pila {stack_name} NO existe o NO es una pila")
+
+    def visit_arriba(self, node):
+        _, stack_name = node
+        if stack_name+self.current_scope in self.symbols_table and self.symbols_table[stack_name+self.current_scope]['type'] == 'pila':
+            stack_value = self.symbols_table[stack_name+self.current_scope]['value']
+            if len(stack_value) > 0:
+                return stack_value[-1]
+            else:
+                raise ValueError("El stack está vacio!")
+
+    def visit_obtener(self, node):
+        _, list_name, index = node
+        print('El nodo que llega a obter es ', node)
+        if list_name+self.current_scope in self.symbols_table and self.symbols_table[list_name+self.current_scope]['type'] == 'lista':
+            list_value = self.symbols_table[list_name+self.current_scope]['value']
+            if len(list_value) > 0 and len(list_value) > index >= (len(list_value)) * -1:
+                print('El tamaño del list es ', len(list_value))
+                return list_value[index]
+            else:
+                raise ValueError('El valor del índice está afuera de lo que puede manejar la lista o la lista está vacía')
+        else:
+            raise ValueError('La lista NO existe o NO es una lista')
+
+    def visit_insertar(self, node):
+        _, list_name, value_insert = node
+        if list_name+self.current_scope in self.symbols_table and self.symbols_table[list_name+self.current_scope]['type'] == 'lista':
+            list_value = self.symbols_table[list_name+self.current_scope]['value']
+            if isinstance(value_insert, self.cast_datatype(self.symbols_table[list_name+self.current_scope]['data_type'])):
+                list_value.append(value_insert)
+                self.symbols_table[list_name+self.current_scope]['value'] = list_value
+            else:
+                raise ValueError(f"El valor proporcionado {value_insert} no es valido para ser ingresado en la lista {list_name}")
+        else:
+            raise ValueError('La lista NO existe o NO es una lista')
+
+    def visit_ultimo(self, node):
+        _, list_name = node
+        if list_name+self.current_scope in self.symbols_table and self.symbols_table[list_name+self.current_scope]['type'] == 'lista':
+            list_value = self.symbols_table[list_name+self.current_scope]['value']
+            if len(list_value) > 0:
+                return list_value[-1]
+            else:
+                raise ValueError("La lista esta vacía, no se puede obtener el último elemento si esta vacía")
+        else:
+            raise ValueError('La lista NO existe o NO es una lista')
+
+    def visit_primero(self, node):
+        _, list_name = node
+        if list_name+self.current_scope in self.symbols_table and self.symbols_table[list_name+self.current_scope]['type'] == 'lista':
+            list_value = self.symbols_table[list_name+self.current_scope]['value']
+            if len(list_value) > 0:
+                return list_value[0]
+            else:
+                raise ValueError("La lista está vacía y así no se puede obtener el primer elemento")
+        else:
+            raise ValueError('La lista NO existe o NO es una lista')

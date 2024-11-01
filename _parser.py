@@ -137,14 +137,68 @@ class Parser:
     def parse_var_def(self):
         data_type = self.current_token.value
         self.expect('DATATYPE')
-        identifier = self.parse_identificador()
-        print('El identifier parseado es ', identifier)
+        if self.current_token.type == 'DATATYPE':
+            complex_data_type = self.current_token.value
+            print('El complex data type es ', complex_data_type)
+            self.expect('DATATYPE')
+            identifier = self.parse_identificador()
+            print('El identifier es ', identifier)
+            if data_type == 'pila':
+                if self.current_token.type == 'ASSIGNMENT':
+                    self.advance()
+                    value = self.parse_stack_assigment(complex_data_type)
+                    return 'stack_declaration', data_type, complex_data_type, identifier, value
+                return 'stack_declaration', data_type, complex_data_type, identifier
+            elif data_type == 'lista':
+                if self.current_token.type == 'ASSIGNMENT':
+                    self.advance()
+                    value = self.parse_stack_assigment(complex_data_type)
+                    return 'list_declaration', data_type, complex_data_type, identifier, value
+                return 'list_declaration', data_type, complex_data_type, identifier
 
-        if self.current_token.type == 'ASSIGNMENT':
-            value = self.parse_asignacion(identifier)
-            return 'var_declaration', data_type, identifier, value
         else:
-            return 'var_declaration', data_type, identifier
+            identifier = self.parse_identificador()
+            print('El identifier parseado es ', identifier)
+
+            if self.current_token.type == 'ASSIGNMENT':
+                value = self.parse_asignacion(identifier)
+                return 'var_declaration', data_type, identifier, value
+            else:
+                return 'var_declaration', data_type, identifier
+
+    def parse_stack_assigment(self, pri_data_type):
+        values = []
+        open_braces = 1
+        print('El current token es ', self.current_token)
+        self.expect('DELIMETER', '[')
+        while open_braces > 0:
+            print('El current token dentro del while es  ', self.current_token)
+            if self.current_token.type == 'DELIMETER' and self.current_token.value == '[':
+                open_braces += 1
+                self.advance()
+            elif self.current_token.type == 'DELIMETER' and self.current_token.value == ']':
+
+                open_braces -= 1
+                self.advance()
+            else:
+                if self.current_token.type == 'DELIMETER' and self.current_token.value == ',':
+                    self.advance()
+                if pri_data_type == 'entero' and "." not in self.current_token.value:
+                    print('El current token value es ', type(self.current_token.value))
+                    values.append(int(self.current_token.value))
+                elif pri_data_type == 'float':
+                    values.append(float(self.current_token.value))
+                elif pri_data_type == 'string':
+                    values.append(self.current_token.value.strip('"'))
+                elif pri_data_type == 'char':
+                    values.append(self.current_token.value)
+                elif pri_data_type == 'boolean':
+                    values.append(bool(self.current_token.value))
+                else:
+                    raise SyntaxError("No se puede procesar correctamente uno de los valores asignados a una lista o pila, verifique el dato ingresado calze con el tipo de dato de las estructuras")
+
+                self.advance()
+        return values
 
     def parse_statement(self):
         print('El current token es ', self.current_token)
@@ -187,6 +241,20 @@ class Parser:
             return self.parse_for()
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'casos':
             return self.parse_switch()
+        elif self.current_token.type == 'STACKMETHODS' and self.current_token.value.lower() == 'mete':
+            return self.parse_mete()
+        elif self.current_token.type == 'STACKMETHODS' and self.current_token.value.lower() == 'saca':
+            return self.parse_saca()
+        elif self.current_token.type == 'STACKMETHODS' and self.current_token.value.lower() == 'arriba':
+            return self.parse_arriba()
+        elif self.current_token.type == 'LISTMETHODS' and self.current_token.value.lower() == 'obtener':
+            return self.parse_obtener()
+        elif self.current_token.type == 'LISTMETHODS' and self.current_token.value.lower() == 'insertar':
+            return self.parse_insertar()
+        elif self.current_token.type == 'LISTMETHODS' and self.current_token.value.lower() == 'ultimo':
+            return self.parse_ultimo()
+        elif self.current_token.type == 'LISTMETHODS' and self.current_token.value.lower() == 'primero':
+            return self.parse_ultimo()
         elif self.current_token.type == 'IO' and self.current_token.value.lower() == 'escriba':
             return self.parse_io_print()
         elif self.current_token.type == 'IO' and self.current_token.value.lower() == 'lea':
@@ -267,9 +335,14 @@ class Parser:
             value = self.current_token.value.lower() == 'true'
             self.advance()
             return value
+        elif self.current_token.type == 'CHAR':
+            value = self.current_token.value
+            self.advance()
+            return value
+
         else:
             raise SyntaxError(
-                f"Se esperaba un IDENTIFIER, NUMBER, STRING o BOOLEAN, pero se encontró {self.current_token}")
+                f"Se esperaba un IDENTIFIER, NUMBER, STRING, CHAR o BOOLEAN, pero se encontró {self.current_token}")
 
     def parse_if_elif(self):
         conditional_type = self.current_token.value
@@ -388,19 +461,32 @@ class Parser:
         while self.current_token.type != 'DELIMETER' or self.current_token.value != ')':
             if self.current_token.type == 'STRING':
                 arguments.append(self.current_token.value)
+                self.advance()
             elif self.current_token.type == 'NUMBER':
                 arguments.append(self.current_token.value)
+                self.advance()
             elif self.current_token.type == 'IDENTIFIER':
                 arguments.append(self.current_token.value)
+                self.advance()
+            elif self.current_token.type == 'STACKMETHODS' and self.current_token.value == 'saca':
+                arguments.append(self.parse_saca())
+            elif self.current_token.type == 'STACKMETHODS' and self.current_token.value == 'arriba':
+                arguments.append(self.parse_arriba())
+            elif self.current_token.type == 'LISTMETHODS' and self.current_token.value == 'ultimo':
+                arguments.append(self.parse_ultimo())
+            elif self.current_token.type == 'LISTMETHODS' and self.current_token.value == 'primero':
+                arguments.append(self.parse_primero())
+            elif self.current_token.type == 'LISTMETHODS' and self.current_token.value == 'obtener':
+                arguments.append(self.parse_obtener())
             elif self.current_token.type == 'NEWLINE' and self.current_token.value == 'salto':
                 arguments.append("\n")
+                self.advance()
             else:
                 raise SyntaxError(f"Se esperaba un argumento valido pero se encontro {self.current_token}")
-            self.advance()
-
             if self.current_token.type == 'DELIMETER' and self.current_token.value == ',':
                 self.advance()
             elif self.current_token.type == 'DELIMETER' and self.current_token.value == ')':
+                print('Me voy a salir ')
                 break
             else:
                 raise SyntaxError(f"Se esperaba una , pero se encontro {self.current_token}")
@@ -556,4 +642,61 @@ class Parser:
         for_body = self.parse_main_o_loop_body()
         print('Antes de retornar ')
         return 'for', condition, for_body
+
+    def parse_mete(self):
+        self.expect('STACKMETHODS', 'mete')
+        self.expect('DELIMETER', '(')
+        identifier = self.parse_identificador()
+        self.expect('DELIMETER', ',')
+        insert_value = self.parse_expresion() #TODO me  queda la duda de que esto sirva
+        self.expect('DELIMETER', ')')
+        return 'mete', identifier, insert_value
+
+    def parse_saca(self):
+        self.expect('STACKMETHODS', 'saca')
+        self.expect('DELIMETER', '(')
+        identifier = self.parse_identificador()
+        self.expect('DELIMETER', ')')
+        print('vamos a retornar saca')
+        return 'saca', identifier
+
+    def parse_arriba(self):
+        self.expect('STACKMETHODS', 'arriba')
+        self.expect('DELIMETER', '(')
+        identifier = self.parse_identificador()
+        self.expect('DELIMETER', ')')
+        return 'arriba', identifier
+
+    def parse_obtener(self):
+        self.expect('LISTMETHODS', 'obtener')
+        self.expect('DELIMETER', '(')
+        identifier = self.parse_identificador()
+        self.expect('DELIMETER', ',')
+        index = self.current_token.value
+        self.expect('NUMBER')
+        self.expect('DELIMETER', ')')
+        return 'obtener', identifier, int(index)
+
+    def parse_insertar(self): # Sirve para insetar un elemento al final de una lista
+        self.expect('LISTMETHODS', 'insertar')
+        self.expect('DELIMETER', '(')
+        identifier = self.parse_identificador()
+        self.expect('DELIMETER', ',')
+        value = self.parse_expresion()
+        self.expect('DELIMETER', ')')
+        return 'insertar', identifier, value
+    def parse_primero(self):
+        self.expect('LISTMETHODS', 'primero')
+        self.expect('DELIMETER', '(')
+        identifier = self.parse_identificador()
+        self.expect('DELIMETER', ')')
+        return 'primero', identifier
+    def parse_ultimo(self):
+        self.expect('LISTMETHODS', 'ultimo')
+        self.expect('DELIMETER', '(')
+        identifier = self.parse_identificador()
+        self.expect('DELIMETER', ')')
+        return 'ultimo', identifier
+
+
 
