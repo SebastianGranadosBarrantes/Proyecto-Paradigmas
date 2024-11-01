@@ -34,10 +34,13 @@ class MainWindow(QMainWindow):
         self.ui.AFOpenDocs.triggered.connect(self.handle_open_docu)
         self.ui.AFInsertComentario.triggered.connect(self.handle_insert_comment)
         self.ui.AFInsertInput.triggered.connect(self.handle_insert_input)
+        self.ui.AFInsertPila.triggered.connect(self.handle_insert_stack)
+        self.ui.AFInsertLista.triggered.connect(self.handle_insert_list)
         self.ui.AFInsertOutput.triggered.connect(self.handle_insert_output)
         self.ui.AFInsertWhile.triggered.connect(self.handle_insert_while_form)
         self.ui.AFInsertFor.triggered.connect(self.handle_insert_for)
         self.ui.AFInsertMain.triggered.connect(self.Insert_main)
+        self.ui.AFInsertVar.triggered.connect(self.handle_insert_var)
         self.ui.AFInsertFunction.triggered.connect(self.handle_insert_function)
         self.ui.AFInsertProcedure.triggered.connect(self.handle_insert_procedure)
 
@@ -351,6 +354,17 @@ main() {
         -*Este es el body del main*-
     }""")
 
+    def handle_insert_var(self):
+        self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
+        self.cursor_codigo.insertText("""data-type var-name = value""")
+
+    def handle_insert_stack(self):
+        self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
+        self.cursor_codigo.insertText("""pila data-type stack-name = []""")
+
+    def handle_insert_list(self):
+        self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
+        self.cursor_codigo.insertText("""lista data-type lista-name = []""")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

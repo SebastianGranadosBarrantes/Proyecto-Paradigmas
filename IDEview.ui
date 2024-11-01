@@ -257,6 +257,12 @@ background-color: rgb(41, 178, 190);
     <addaction name="separator"/>
     <addaction name="AFInsertOutput"/>
     <addaction name="separator"/>
+    <addaction name="AFInsertVar"/>
+    <addaction name="separator"/>
+    <addaction name="AFInsertPila"/>
+    <addaction name="separator"/>
+    <addaction name="AFInsertLista"/>
+    <addaction name="separator"/>
     <addaction name="AFOpenDocs"/>
     <addaction name="separator"/>
    </widget>
@@ -383,6 +389,21 @@ background-color: rgb(41, 178, 190);
   <action name="AFOpenDocs">
    <property name="text">
     <string>Abrir Documentación del proyecto</string>
+   </property>
+  </action>
+  <action name="AFInsertVar">
+   <property name="text">
+    <string>Insertar var def</string>
+   </property>
+  </action>
+  <action name="AFInsertPila">
+   <property name="text">
+    <string>Insert pila def</string>
+   </property>
+  </action>
+  <action name="AFInsertLista">
+   <property name="text">
+    <string>Insertar lista def</string>
    </property>
   </action>
  </widget>
