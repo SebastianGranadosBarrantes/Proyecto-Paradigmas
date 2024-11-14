@@ -1,10 +1,11 @@
-from PyQt6.QtCore import QObject, pyqtSignal, QEventLoop
+from PyQt6.QtCore import QThread, pyqtSignal, QEventLoop
 
 
-class Interpreter(QObject):
+class Interpreter(QThread):
     input_ready = pyqtSignal(str)
     request_input = pyqtSignal()
     input_type_error = pyqtSignal()
+    output_act = pyqtSignal()
     def __init__(self, tree):
         super().__init__()
         self.input_loop = None
@@ -18,7 +19,7 @@ class Interpreter(QObject):
         self.input_ready.connect(self.process_input)
         self.on_execution = True
 
-    def interpret(self):
+    def run(self):
         for node in self.tree:
             if self.on_execution:
                 if node[0] == 'function' or node[0] == 'procedure':
@@ -203,8 +204,7 @@ class Interpreter(QObject):
     def visit_print(self, node):
         _, arguments = node
         output = ""
-        print('El current scope en la impresion es: ', self.current_scope)
-        print('Los argumentos son ', arguments)
+        print('Entra al imprima')
         for arg in arguments:
             if isinstance(arg, tuple):
                 if arg[0] == 'saca':
@@ -224,6 +224,7 @@ class Interpreter(QObject):
                 print('Entra aca al else')
                 output += str(arg.replace('"', ''))
         self.outputs.append(output)
+        self.output_act.emit()
 
     def visit_function_call(self, node):
         _, function_name, arguments = node

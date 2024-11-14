@@ -308,18 +308,13 @@ main() {
                 self.interpreter.request_input.connect(self.handle_input)
                 self.input_ready.connect(self.interpreter.input_ready.emit)
                 self.interpreter.input_type_error.connect(self.handle_input_error)
-                self.interpreter.interpret()
+                self.interpreter.output_act.connect(self.handle_output)
+                self.interpreter.start()
             except ValueError as e:
                 QMessageBox.critical(self, 'Error de valores', str(e))
             except Exception as e:
                 print('Paso un error')
                 QMessageBox.critical(self, 'Error inesperado en la ejecución ', f"{str(e)}")
-
-            outputs = ''
-            print(self.interpreter.outputs)
-            for output in self.interpreter.outputs:
-                outputs += str(output)
-            self.ui.TxtSalida.setPlainText(outputs)
 
     def handle_input(self):
         self.ui.Txt_Consola.setReadOnly(False)
@@ -365,6 +360,17 @@ main() {
     def handle_insert_list(self):
         self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
         self.cursor_codigo.insertText("""lista data-type lista-name = []""")
+
+    def handle_output(self):
+        outputs = ''
+        for output in self.interpreter.outputs:
+            outputs += str(output)
+        self.interpreter.outputs = []
+        print('El valor de outputs es', outputs, 'prueba')
+        self.ui.TxtSalida.insertPlainText(outputs)
+        scroll_bar = self.ui.TxtSalida.verticalScrollBar()
+        scroll_bar.setValue(scroll_bar.maximum())
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
