@@ -255,7 +255,7 @@ background-color: rgb(41, 178, 190);
     <addaction name="separator"/>
     <addaction name="AFInsertProcedure"/>
     <addaction name="separator"/>
-    <addaction name="actionInsertar_esqueleto_switch"/>
+    <addaction name="AFInsertSwitch"/>
     <addaction name="separator"/>
     <addaction name="AFInsertOutput"/>
     <addaction name="separator"/>
@@ -408,7 +408,7 @@ background-color: rgb(41, 178, 190);
     <string>Insertar lista def</string>
    </property>
   </action>
-  <action name="actionInsertar_esqueleto_switch">
+  <action name="AFInsertSwitch">
    <property name="text">
     <string>Insertar esqueleto switch</string>
    </property>

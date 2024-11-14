@@ -8,7 +8,6 @@ from interpreter import Interpreter
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSignal
 import webbrowser
-from PyQt6.QtGui import QTextCursor
 
 
 class MainWindow(QMainWindow):
@@ -43,6 +42,7 @@ class MainWindow(QMainWindow):
         self.ui.AFInsertVar.triggered.connect(self.handle_insert_var)
         self.ui.AFInsertFunction.triggered.connect(self.handle_insert_function)
         self.ui.AFInsertProcedure.triggered.connect(self.handle_insert_procedure)
+        self.ui.AFInsertSwitch.triggered.connect(self.handle_insert_switch_form)
 
         self.lexer = Lexer('')
         self.ui.TxtSalida.setReadOnly(True)
@@ -276,6 +276,21 @@ main() {
     -*Este es el body del while*-
     }""")
 
+    def handle_insert_switch_form(self):
+        self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
+        self.cursor_codigo.insertText("""casos(variable del switch) {
+        caso (caso1) {
+            -*aqui va el contenido del caso 1*-
+        }
+        caso (cason) {
+           -*aqui va el contenido del caso n*-
+        }
+        
+        defecto {
+            -*aqui va el contenido del caso por defecto*-
+        }
+    }""")
+
     def handle_insert_input(self):
         self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
         self.cursor_codigo.insertText("lea(variable_donde_guarda)")
@@ -340,7 +355,7 @@ main() {
         QMessageBox.critical(self, 'Input incorrecto ', 'Se esta ingresando un tipo de dato incorrecto en el input')
 
     def handle_open_docu(self):
-        webbrowser.open("https://docs.google.com/document/d/1AYDq8nZ2QrqlBFc0K9J0PXMFCcTzbSHdPG41BSrHUDk/edit?usp=sharing")
+        webbrowser.open("https://drive.google.com/file/d/1aEjER7-Dd3gT5nR3X6LWDnV2RRQqBfj-/view?usp=sharing")
 
     def Insert_main(self):
         self.cursor_codigo = self.ui.Txt_Codigo.textCursor()
