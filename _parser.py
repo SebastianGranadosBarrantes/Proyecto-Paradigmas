@@ -214,7 +214,6 @@ class Parser:
         elif self.current_token.type == 'DATATYPE':
             return self.parse_var_def()
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'si':
-            print('entra al if')
             return self.parse_if_elif()
         elif self.current_token.type == 'KEYWORD' and self.current_token.value.lower() == 'sino':
             if self.conditional_stack[-1]:
@@ -398,55 +397,71 @@ class Parser:
         return 'else', ('body', body)
 
     def parse_condition(self):
-        if self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER':
-            value1 = self.parse_expresion()
+        if self.current_token.type == 'LOGICAL_OPERATOR' and self.current_token.value == 'not':
+            self.advance()
+            self.expect('DELIMETER', '(')
+            not_condition = self.parse_condition()
+            self.expect('DELIMETER', ')')
+            print('Vamos a retornar de una ')
+            if self.current_token.type == 'DELIMETER' and self.current_token.value == ')':
+                return ('not', not_condition)
+            elif self.current_token.type == 'LOGICAL_OPERATOR' and (self.current_token.value == 'and' or self.current_token.value == 'or'):
+                operator = self.current_token.value
+                self.expect('LOGICAL_OPERATOR')
+                rigth = self.parse_condition()
+                return 'logical_expression', ('not',not_condition), operator, rigth
 
+
+        elif self.current_token.type == 'IDENTIFIER' or self.current_token.type == 'NUMBER' or self.current_token.type == 'BOOLEAN':
+            value1 = self.parse_expresion()
+            if (self.current_token.type == 'DELIMETER' or self.current_token.type == 'BOOLEAN') and self.current_token.value == ')':
+                return 'bool_variable', value1
             comparator = self.current_token.value
             self.expect('COMPARATOR')
-            print('El valor del currrent token es ', self.current_token)
+
             if self.current_token.type == 'IDENTIFIER':
                 value2 = self.parse_expresion()
                 condition_node = ('comparison', value1, comparator, value2)
-                if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
-                    log_op = self.current_token.value
-                    self.advance()
-                    next_condition = self.parse_condition()
-                    return 'logical_expression', condition_node, log_op, next_condition
-                return condition_node
+
             elif self.current_token.type == 'NUMBER':
                 value2 = float(self.parse_expresion())
                 condition_node = ('comparison', value1, comparator, value2)
-                if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
-                    log_op = self.current_token.value
-                    self.advance()
-                    next_condition = self.parse_condition()
-                    return 'logical_expression', condition_node, log_op, next_condition
-                return condition_node
+
+            elif self.current_token.type == 'BOOLEAN':
+                value2 = bool(self.parse_expresion())
+                condition_node = ('comparison', value1, comparator, value2)
+
             elif self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
                 self.advance()
                 nested_condition = self.parse_condition()
                 self.expect('DELIMETER')
                 condition_node = ('comparison', value1, comparator, nested_condition)
 
-                if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
-                    log_op = self.current_token.value
-                    self.advance()
-                    next_condition = self.parse_condition()
-                    return 'logical_expression', condition_node, log_op, next_condition
-                return condition_node
             else:
                 raise SyntaxError(
                     f"Se esperaba un identificador, número o paréntesis después del comparador, pero se encontró {self.current_token}")
 
+            if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
+                log_op = self.current_token.value
+                self.advance()
+                next_condition = self.parse_condition()
+                return 'logical_expression', condition_node, log_op, next_condition
+
+            return condition_node
+
         elif self.current_token.type == 'DELIMETER' and self.current_token.value == '(':
+            # Manejo de condiciones anidadas
             self.advance()
             nested_condition = self.parse_condition()
-            self.expect('DELIMETER')
+            self.expect('DELIMETER', ')')
+
+            # Verificación para operadores lógicos si siguen después de la condición anidada
             if self.current_token and self.current_token.type == 'LOGICAL_OPERATOR':
                 log_op = self.current_token.value
                 self.advance()
                 next_condition = self.parse_condition()
                 return 'logical_expression', nested_condition, log_op, next_condition
+
             return nested_condition
 
         else:

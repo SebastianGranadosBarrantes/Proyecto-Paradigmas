@@ -255,9 +255,10 @@ class Interpreter(QObject):
         return executed_function_body
 
     def visit_if(self, node):
+        print('El nodo que llega a visit_if es ', node)
         _, condition, body = node
         if self.evaluate_condition(condition):
-            self.already_encountered = True #TODO Esto para que sirve
+            self.already_encountered = True
             self.execute_body(body)
 
     def visit_while(self, node):
@@ -308,11 +309,13 @@ class Interpreter(QObject):
 
     def evaluate_condition(self, condition):
         print('El condition que viene es ', condition)
+        if isinstance(condition, bool):
+            return condition
         if condition[0] == 'comparison':
             left, operator, right = condition[1:]
             print('El tipo del left es ', type(left))
             print('El tipo del right es ', type(right))
-            if isinstance(left, int) or isinstance(left, float):
+            if isinstance(left, int) or isinstance(left, float) or isinstance(left, bool):
                 left_value = left
             elif isinstance(left, tuple) and left[0] == 'expresion_aritmetica':
                 left_value = self.evaluate_expression(left)
@@ -336,6 +339,9 @@ class Interpreter(QObject):
             print('El valor derecho es ', right_value, ' y  el tipo es ', type(right_value))
             print('El operador es ', operator)
             return self.apply_comparator(left_value, operator, right_value)
+        elif condition[0] == 'not':
+            return not self.evaluate_condition(condition[1])
+
         elif condition[0] == 'logical_expression':
             print('Enta al logical expresion ')
             left_expr, operator, right_expr = condition[1:]
@@ -343,6 +349,16 @@ class Interpreter(QObject):
             left_result = self.evaluate_condition(left_expr)
             right_result = self.evaluate_condition(right_expr)
             return self.apply_logical_operator(left_result, operator, right_result)
+        elif condition[0] == 'bool_variable':
+            print('El tipo de dato del valor es ', type(condition[1]))
+            var_value = condition[1]
+            if isinstance(var_value, bool):
+                return var_value
+            elif var_value+self.current_scope in self.symbols_table:
+                var_value = self.symbols_table[var_value + self.current_scope]['value']
+
+            return var_value
+
 
     def apply_comparator(self, left, operator, right):
         if operator == '==':

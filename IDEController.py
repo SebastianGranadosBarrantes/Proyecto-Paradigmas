@@ -174,6 +174,8 @@ class Ui_MainWindow(object):
         self.AFInsertPila.setObjectName("AFInsertPila")
         self.AFInsertLista = QtGui.QAction(parent=MainWindow)
         self.AFInsertLista.setObjectName("AFInsertLista")
+        self.actionInsertar_esqueleto_switch = QtGui.QAction(parent=MainWindow)
+        self.actionInsertar_esqueleto_switch.setObjectName("actionInsertar_esqueleto_switch")
         self.menuNuevo.addAction(self.actionAbrir)
         self.menuNuevo.addSeparator()
         self.menuNuevo.addAction(self.actionNuevo)
@@ -195,6 +197,8 @@ class Ui_MainWindow(object):
         self.menuOpciones.addAction(self.AFInsertFunction)
         self.menuOpciones.addSeparator()
         self.menuOpciones.addAction(self.AFInsertProcedure)
+        self.menuOpciones.addSeparator()
+        self.menuOpciones.addAction(self.actionInsertar_esqueleto_switch)
         self.menuOpciones.addSeparator()
         self.menuOpciones.addAction(self.AFInsertOutput)
         self.menuOpciones.addSeparator()
@@ -262,6 +266,7 @@ class Ui_MainWindow(object):
         self.AFInsertVar.setText(_translate("MainWindow", "Insertar var def"))
         self.AFInsertPila.setText(_translate("MainWindow", "Insert pila def"))
         self.AFInsertLista.setText(_translate("MainWindow", "Insertar lista def"))
+        self.actionInsertar_esqueleto_switch.setText(_translate("MainWindow", "Insertar esqueleto switch"))
 
 
 if __name__ == "__main__":
