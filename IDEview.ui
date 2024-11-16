@@ -6,13 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>976</width>
+    <width>986</width>
     <height>639</height>
    </rect>
   </property>
   <property name="font">
    <font>
-    <weight>75</weight>
     <italic>false</italic>
     <bold>true</bold>
    </font>
@@ -24,30 +23,197 @@
    <string>JÄGER-SCRIPT IDE</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">QMainWindow{
-	background-color: rgb(75, 75, 75);
-}
-QMenuBar{
-	
-	background-color: rgb(156, 255, 26);
-}
+   <string notr="true">
 
-QVBoxLayout{
-background-color: rgb(156, 255, 26);
-
+QMainWindow {
+    background-color: #1E1E2E;
+    color: #FFFFFF;
+    font-family: "Roboto", sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-QLabel{
-background-color: rgb(156, 255, 26);
+QMenuBar {
+    background-color: #252537;
+    color: #FFFFFF;
+    border-bottom: 2px solid #3A3A4F;
+    font-family: "Helvetica Neue", sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
 }
 
-QMenu{
-background-color: rgb(41, 178, 190);
+QMenuBar::item {
+    background-color: transparent;
+    color: #FFFFFF;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
 }
 
-QPushButton{
-background-color: rgb(41, 178, 190);
-}</string>
+QMenuBar::item:selected {
+    background-color: #3A3A4F;
+    border-radius: 6px;
+}
+
+QMenu {
+    background-color: #2D2D3E;
+    color: #FFFFFF;
+    border: 1px solid #3A3A4F;
+    padding: 6px;
+    border-radius: 8px;
+}
+
+QMenu::item {
+    background-color: transparent;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+QMenu::item:selected {
+    background-color: #505068;
+    color: #E5E5E5;
+}
+
+QLabel {
+    color: #E5E5E5;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    transition: color 0.3s ease;
+}
+
+QPushButton {
+    background-color: #505068;
+    color: #E5E5E5;
+    border: 1px solid #3A3A4F;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-family: "Helvetica Neue", sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+QPushButton:hover {
+    background-color: #636382;
+    border-color: #505068;
+    transform: scale(1.05);
+}
+
+QPushButton:pressed {
+    background-color: #3A3A4F;
+    transform: scale(0.98);
+}
+
+QTextEdit {
+    background-color: #2D2D3E;
+    color: #E5E5E5;
+    border: 1px solid #3A3A4F;
+    border-radius: 8px;
+    padding: 10px;
+    font-family: "Courier New", monospace;
+    font-size: 14px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+QTextEdit:focus {
+    border-color: #505068;
+    box-shadow: 0 0 10px rgba(80, 80, 80, 0.5);
+}
+
+QStatusBar {
+    background-color: #1E1E2E;
+    color: #FFFFFF;
+    border-top: 1px solid #3A3A4F;
+    font-size: 12px;
+    font-family: "Roboto", sans-serif;
+}
+
+QVBoxLayout, QHBoxLayout {
+    background-color: transparent;
+}
+
+QWidget {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+QFrame, QWidget {
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+QPushButton:hover, QMenuBar::item:hover, QMenu::item:hover {
+    background-color: #636382;
+    border-color: #505068;
+    cursor: pointer;
+}
+
+QMenuBar {
+    transition: background-color 0.3s ease;
+}
+
+QMenuBar::item:selected {
+    background-color: #505068;
+}
+
+QMessageBox {
+    background-color: #2D2D3E; /* Fondo oscuro similar a los otros componentes */
+    color: #E5E5E5; /* Color blanco para el texto */
+    font-family: "Roboto", sans-serif;
+    font-size: 14px;
+    border-radius: 8px;
+    padding: 20px;
+    min-width: 300px; /* Ancho mínimo para mejorar la visibilidad */
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); /* Sombra para darle profundidad */
+}
+
+QMessageBox QLabel {
+    color: #E5E5E5; /* Color claro para el texto */
+    font-size: 16px; /* Asegura que el texto sea legible */
+    font-weight: normal;
+    margin-bottom: 10px;
+}
+
+QMessageBox QPushButton {
+    background-color: #505068;
+    color: #E5E5E5;
+    border: 1px solid #3A3A4F;
+    border-radius: 8px;
+    padding: 8px 15px;
+    font-family: "Helvetica Neue", sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+QMessageBox QPushButton:hover {
+    background-color: #636382;
+    border-color: #505068;
+    transform: scale(1.05);
+}
+
+QMessageBox QPushButton:pressed {
+    background-color: #3A3A4F;
+    transform: scale(0.98);
+}
+
+QMessageBox QPushButton#ok {
+    background-color: #505068;
+    color: #E5E5E5;
+}
+
+QMessageBox QPushButton#ok:hover {
+    background-color: #636382;
+    border-color: #505068;
+}
+
+QMessageBox QLabel[icon] {
+    margin-right: 10px;
+    padding-left: 10px;
+}
+
+   </string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QWidget" name="verticalLayoutWidget">
@@ -86,9 +252,6 @@ background-color: rgb(41, 178, 190);
      </item>
      <item>
       <widget class="QTextEdit" name="Txt_Codigo">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 255, 255);</string>
-       </property>
       </widget>
      </item>
     </layout>
@@ -207,9 +370,6 @@ background-color: rgb(41, 178, 190);
      </item>
      <item>
       <widget class="QTextEdit" name="Txt_Consola">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 255, 255);</string>
-       </property>
       </widget>
      </item>
     </layout>
@@ -220,8 +380,8 @@ background-color: rgb(41, 178, 190);
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>976</width>
-     <height>21</height>
+     <width>986</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuNuevo">
