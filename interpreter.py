@@ -3,6 +3,7 @@ from PyQt6.QtCore import QThread, pyqtSignal, QEventLoop
 
 class Interpreter(QThread):
     input_ready = pyqtSignal(str)
+    error_signal = pyqtSignal(str)
     request_input = pyqtSignal()
     input_type_error = pyqtSignal()
     output_act = pyqtSignal()
@@ -18,6 +19,7 @@ class Interpreter(QThread):
         self.already_encountered = False
         self.input_ready.connect(self.process_input)
         self.on_execution = True
+        self.error_on_execution = False
 
     def run(self):
         for node in self.tree:
@@ -25,6 +27,9 @@ class Interpreter(QThread):
                 if node[0] == 'function' or node[0] == 'procedure':
                     self.visit(node)
                 elif node[0] == 'var_declaration':
+                    self.current_scope = 'global'
+                    self.visit(node)
+                elif node[0] == 'stack_declaration' or node[0] == 'list_declaration':
                     self.current_scope = 'global'
                     self.visit(node)
 
@@ -89,6 +94,7 @@ class Interpreter(QThread):
             self.visit_read(node)
         else:
             self.on_execution = False
+            self.error_on_execution = True
             raise ValueError(f"Tipo de nodo desconocido: {node_type}")
 
     def visit_function(self, node):
@@ -107,6 +113,7 @@ class Interpreter(QThread):
             self.symbols_table[var_name+self.current_scope] = {'type': 'variable', 'data_type': var_type, 'value': None, 'scope': self.current_scope}
         else:
             self.on_execution = False
+            self.error_on_execution = True
             raise ValueError(f'Una variable con nombre {var_name} ya existe en el scope {self.current_scope}')
         print(f"Declaración de variable {var_name} de tipo {var_type}.")
         if len(node) == 4:
@@ -128,109 +135,133 @@ class Interpreter(QThread):
 
     def visit_assignment(self, node):
         _, var_name, expression = node
-        print('El nodo que viene es ', node)
-        value = self.evaluate_expression(expression)
-        print('El value es ', value, ' y el tip es ', type(value))
-        print('El value en symbols table es ', self.symbols_table[var_name + self.current_scope]['value'])
-        print('El token para acceder es ', var_name + self.current_scope)
-        expected_type = self.cast_datatype(self.symbols_table[var_name+self.current_scope]['data_type'])
-        print('El expected type es ', expected_type)
-        if isinstance(value, float) and expected_type == int:
-            value = int(value)
-        elif isinstance(value, int) and expected_type == float:
-            value = float(value)
-        if isinstance(value, expected_type):
-            if self.symbols_table[var_name+self.current_scope]['data_type'] == 'char':
-                if len(value) > 1:
-                    self.on_execution = False
-                    raise ValueError(f"Una variable de tipo char solo puede almacenar un carácter")
-
-            print(f"Asignando {value} a la variable {var_name} con scope {self.current_scope}")
-            self.symbols_table[var_name+self.current_scope]['value'] = value
-        else:
-            print('entra al else de exception')
-            print('El var name es ', var_name)
+        try:
+            print('El nodo que viene es ', node)
+            value = self.evaluate_expression(expression)
+            print('El value es ', value, ' y el tipo es ', type(value))
+            if var_name+self.current_scope in self.symbols_table:
+                scope = self.current_scope
+            elif var_name+'global' in self.symbols_table:
+                scope = 'global'
+            else:
+                self.error_on_execution = True
+                raise ValueError(f"No existe una variable en ningun scope llamada {var_name}")
+            expected_type = self.cast_datatype(self.symbols_table[var_name + scope]['data_type'])
+            print('El expected type es ', expected_type)
+            if isinstance(value, float) and expected_type == int:
+                value = int(value)
+            elif isinstance(value, int) and expected_type == float:
+                value = float(value)
+            if isinstance(value, expected_type) :
+                if self.symbols_table[var_name + scope]['data_type'] == 'char':
+                    if len(value) > 1:
+                        self.error_on_execution = True
+                        raise ValueError(f"Una variable de tipo char solo puede almacenar un carácter")
+                print(f"Asignando {value} a la variable {var_name} con scope {self.current_scope}")
+                self.symbols_table[var_name + scope]['value'] = value
+            elif value is None:
+                self.symbols_table[var_name + scope]['value'] = value
+            else:
+                self.error_on_execution = True
+                raise ValueError(
+                    f"Se esperaba un valor de tipo {self.symbols_table[var_name + scope]['data_type']}, pero se encontró {type(value).__name__}")
+            print('El valor de salida del interprete es ', self.symbols_table[var_name + scope]['value'])
+            self.print_symbols_table()
+        except ValueError as e:
             self.on_execution = False
-            raise ValueError(
-                f"Se esperaba un valor de tipo {self.symbols_table[var_name+self.current_scope]['data_type']}, pero se encontró {type(value).__name__}")
-
-        print('El valor de salida del interprete es ', self.symbols_table[var_name+self.current_scope]['value'])
-        self.print_symbols_table()
+            self.error_signal.emit(str(e))
 
     def evaluate_expression(self, expr):
-        print('El valor de expresion que recibimos es ', expr, ' y el datatype es ', type(expr))
-        if isinstance(expr, tuple) and expr[0] == 'expresion_aritmetica':
-            print('El operator que entra es ', expr[2])
-            left = self.evaluate_expression(expr[1])
-            operator = expr[2]
-            right = self.evaluate_expression(expr[3])
+        try:
+            print('El valor de expresion que recibimos es ', expr, ' y el datatype es ', type(expr))
+            if isinstance(expr, tuple) and expr[0] == 'expresion_aritmetica':
+                print('El operator que entra es ', expr[2])
+                left = self.evaluate_expression(expr[1])
+                operator = expr[2]
+                right = self.evaluate_expression(expr[3])
+                if right is None or left is None:
+                    self.error_on_execution = True
+                    raise ValueError(f"NO se puede hacer una operacion aritmetica con NONE")
+                elif operator == '*':
+                    return float(left) * float(right)
+                elif operator == '+':
+                    if isinstance(left, str) and isinstance(right, str):
+                        return left + right
+                    return float(left) + float(right)
+                elif operator == '-':
+                    return float(left) - float(right)
+                elif operator == '/':
+                    return float(left) / float(right)
+                elif operator == '%':
+                    return float(left) % float(right)
+                else:
+                    self.on_execution = False
+                    self.error_on_execution = True
+                    raise ValueError(f"Operador aritmético desconocido: {operator}")
 
-            if operator == '*':
-                print('Entra a multi')
-                return float(left) * float(right)
-            elif operator == '+':
-                if isinstance(left, str) and isinstance(right, str):
-                    return left + right
-                return float(left) + float(right)
-            elif operator == '-':
-                print('Entra a resta')
-                return float(left) - float(right)
-            elif operator == '/':
-                print('Entra a división')
-                return float(left) / float(right)
-            elif operator == '%':
-                print('Entra a modulo')
-                return float(left) % float(right)
+            elif isinstance(expr, str) and expr.startswith('"') and expr.endswith('"'):
+                return expr.strip('""')
+            elif isinstance(expr, str) and expr.startswith("'") and expr.endswith("'"):
+                return expr.strip("'")
+            elif isinstance(expr, tuple) and expr[0] == 'llamada_funcion':
+                return self.visit_function_call(expr)
             else:
-                self.on_execution = False
-                raise ValueError(f"Operador aritmético desconocido: {operator}")
-
-        elif isinstance(expr, str) and expr.startswith('"') and expr.endswith('"'):
-            print('Entra como si fuera un string ')
-            return expr.strip('""')
-        elif isinstance(expr, str) and expr.startswith("'") and expr.endswith("'"):
-            return expr.strip("'")
-        elif isinstance(expr, tuple) and expr[0] == 'llamada_funcion':
-            print('Entra a llamar la función ')
-            return self.visit_function_call(expr)
-        else:
-            self.print_symbols_table()
-            if isinstance(expr, str) and expr+self.current_scope in self.symbols_table:
-                return self.symbols_table[expr+self.current_scope]['value']
-            elif isinstance(expr, int) or isinstance(expr, float):
-                print('El valor tipo de dato es ', type(expr))
-                return expr
+                self.print_symbols_table()
+                if isinstance(expr, str) and expr + self.current_scope in self.symbols_table:
+                    return self.symbols_table[expr + self.current_scope]['value']
+                elif isinstance(expr, int) or isinstance(expr, float):
+                    return expr
+        except ValueError as e:
+            self.error_signal.emit(str(e))
+            return
 
     def visit_print(self, node):
         _, arguments = node
         output = ""
-        print('Entra al imprima')
-        for arg in arguments:
-            if isinstance(arg, tuple):
-                if arg[0] == 'saca':
-                    output += str(self.visit_saca(arg))
-                elif arg[0] == 'arriba':
-                    output += str(self.visit_arriba(arg))
-                elif arg[0] == 'obtener':
-                    output += str(self.visit_obtener(arg))
-                elif arg[0] == 'ultimo':
-                    output += str(self.visit_ultimo(arg))
-                elif arg[0] == 'primero':
-                    output += str(self.visit_primero(arg))
-            elif arg+self.current_scope in self.symbols_table:
-                print('entra aca al if')
-                output += str(self.symbols_table[arg+self.current_scope]['value'])
-            else:
-                print('Entra aca al else')
-                output += str(arg.replace('"', ''))
-        self.outputs.append(output)
-        self.output_act.emit()
+        print('Entra al imprima con argumentos ', arguments)
+        try:
+            for arg in arguments:
+                if isinstance(arg, tuple):
+                    if arg[0] == 'saca':
+                        output += str(self.visit_saca(arg))
+                    elif arg[0] == 'arriba':
+                        output += str(self.visit_arriba(arg))
+                    elif arg[0] == 'obtener':
+                        output += str(self.visit_obtener(arg))
+                    elif arg[0] == 'ultimo':
+                        output += str(self.visit_ultimo(arg))
+                    elif arg[0] == 'primero':
+                        output += str(self.visit_primero(arg))
+                elif arg + self.current_scope in self.symbols_table:
+                    if self.symbols_table[arg + self.current_scope]['value'] is None:
+                        output += 'Nulo'
+                    else:
+                        output += str(self.symbols_table[arg + self.current_scope]['value'])
+                elif arg + 'global' in self.symbols_table:
+                    if self.symbols_table[arg + 'global']['value'] is None:
+                        output += 'Nulo'
+                    else:
+                        output += str(self.symbols_table[arg + 'global']['value'])
+                elif arg.startswith('"') and arg.endswith('"') or arg == '\n':
+                    output += str(arg.replace('"', ''))
+                else:
+                    self.on_execution = False
+                    self.error_on_execution = True
+                    raise ValueError(f"Un argumento especificado en la funcion escriba no es valido: {arg}")
+
+            self.outputs.append(output)
+            self.output_act.emit()
+
+        except ValueError as e:
+            self.error_signal.emit(str(e))
+            return
 
     def visit_function_call(self, node):
         _, function_name, arguments = node
         print('La lista de funciones es ', self.functions)
         print('El nodo de entrada es ', node)
         if function_name not in self.functions:
+            self.error_on_execution = True
             raise NameError(f"Función {function_name} no definida.")
 
         function = self.functions[function_name]
@@ -376,6 +407,7 @@ class Interpreter(QThread):
             return left <= right
         else:
             self.on_execution = False
+            self.error_on_execution = True
             raise ValueError(f"Operador de comparación desconocido: {operator}")
 
     def apply_logical_operator(self, left, operator, right):
@@ -385,6 +417,7 @@ class Interpreter(QThread):
             return left or right
         else:
             self.on_execution = False
+            self.error_on_execution = True
             raise ValueError(f"Operador lógico desconocido: {operator}")
 
     def print_symbols_table(self):
@@ -484,6 +517,7 @@ class Interpreter(QThread):
                                                                      'value': value, 'scope': self.current_scope}
             else:
                 self.on_execution = False
+                self.error_on_execution = True
                 raise ValueError(f'Ya existe un identificador con nombre {var_name} en el scope {self.current_scope}')
         else:
             _, compund_type, ptype, var_name = node
@@ -492,6 +526,7 @@ class Interpreter(QThread):
                                                                      'value': [], 'scope': self.current_scope}
             else:
                 self.on_execution = False
+                self.error_on_execution = True
                 raise ValueError(f'Ya existe un identificador con nombre {var_name} en el scope {self.current_scope}')
 
     def visit_saca(self, node):
@@ -503,10 +538,21 @@ class Interpreter(QThread):
                 self.symbols_table[stack_name+self.current_scope]['value'] = value
                 return extract
             else:
+                self.error_on_execution = True
                 raise ValueError('Se esta intentando sacar el head de la pila cuando esta está vacía')
-
+        elif stack_name+'global' in self.symbols_table and self.symbols_table[stack_name+'global']['type'] == 'pila':
+            scope = 'global'
+            value = self.symbols_table[stack_name+scope]['value']
+            if len(value) > 0:
+                extract = value.pop()
+                self.symbols_table[stack_name+scope]['value'] = value
+                return extract
+            else:
+                self.error_on_execution = True
+                raise ValueError('Se esta intentando sacar el head de la pila cuando esta está vacía')
         else:
             print('Entra al else')
+            self.error_on_execution = True
             raise ValueError('Se esta indicando un onjeto que NO es una pila o NO existe')
 
     def visit_mete(self, node):
@@ -518,8 +564,19 @@ class Interpreter(QThread):
                 stack_value.append(value)
                 self.symbols_table[stack_name+self.current_scope]['value'] = stack_value
             else:
+                self.error_on_execution = True
+                raise ValueError(f"El tipo de dato de {value} no coincide con el tipo de dato especificado en la pila")
+        elif stack_name+'global' in self.symbols_table and self.symbols_table[stack_name+'global']['type'] == 'pila':
+            scope = 'global'
+            stack_value = self.symbols_table[stack_name+scope]['value']
+            if isinstance(value, self.cast_datatype(self.symbols_table[stack_name+scope]['data_type'])):
+                stack_value.append(value)
+                self.symbols_table[stack_name+scope]['value'] = stack_value
+            else:
+                self.error_on_execution = True
                 raise ValueError(f"El tipo de dato de {value} no coincide con el tipo de dato especificado en la pila")
         else:
+            self.error_on_execution = True
             raise ValueError(f"La pila {stack_name} NO existe o NO es una pila")
 
     def visit_arriba(self, node):
@@ -529,7 +586,19 @@ class Interpreter(QThread):
             if len(stack_value) > 0:
                 return stack_value[-1]
             else:
+                self.error_on_execution = True
                 raise ValueError("El stack está vacio!")
+        elif stack_name+'global' in self.symbols_table and self.symbols_table[stack_name+'global']['type'] == 'pila':
+            stack_value = self.symbols_table[stack_name+'global']['value']
+            if len(stack_value) > 0:
+                return stack_value[-1]
+            else:
+                self.error_on_execution = True
+                raise ValueError("El stack está vacio!")
+        else:
+            self.error_on_execution = True
+            raise ValueError('La pila NO existe o NO es una pila')
+
 
     def visit_obtener(self, node):
         _, list_name, index = node
@@ -540,8 +609,19 @@ class Interpreter(QThread):
                 print('El tamaño del list es ', len(list_value))
                 return list_value[index]
             else:
+                self.error_on_execution = True
+                raise ValueError('El valor del índice está afuera de lo que puede manejar la lista o la lista está vacía')
+        elif list_name+'global' in self.symbols_table and self.symbols_table[list_name+'global']['type'] == 'lista':
+            scope = 'global'
+            list_value = self.symbols_table[list_name+scope]['value']
+            if len(list_value) > 0 and len(list_value) > index >= (len(list_value)) * -1:
+                print('El tamaño del list es ', len(list_value))
+                return list_value[index]
+            else:
+                self.error_on_execution = True
                 raise ValueError('El valor del índice está afuera de lo que puede manejar la lista o la lista está vacía')
         else:
+            self.error_on_execution = True
             raise ValueError('La lista NO existe o NO es una lista')
 
     def visit_insertar(self, node):
@@ -552,8 +632,19 @@ class Interpreter(QThread):
                 list_value.append(value_insert)
                 self.symbols_table[list_name+self.current_scope]['value'] = list_value
             else:
+                self.error_on_execution = True
+                raise ValueError(f"El valor proporcionado {value_insert} no es valido para ser ingresado en la lista {list_name}")
+        elif list_name+'global' in self.symbols_table and self.symbols_table[list_name+'global']['type'] == 'lista':
+            scope = 'global'
+            list_value = self.symbols_table[list_name+scope]['value']
+            if isinstance(value_insert, self.cast_datatype(self.symbols_table[list_name+scope]['data_type'])):
+                list_value.append(value_insert)
+                self.symbols_table[list_name+scope]['value'] = list_value
+            else:
+                self.error_on_execution = True
                 raise ValueError(f"El valor proporcionado {value_insert} no es valido para ser ingresado en la lista {list_name}")
         else:
+            self.error_on_execution = True
             raise ValueError('La lista NO existe o NO es una lista')
 
     def visit_ultimo(self, node):
@@ -563,8 +654,17 @@ class Interpreter(QThread):
             if len(list_value) > 0:
                 return list_value[-1]
             else:
+                self.error_on_execution = True
+                raise ValueError("La lista esta vacía, no se puede obtener el último elemento si esta vacía")
+        elif list_name+'global' in self.symbols_table and self.symbols_table[list_name+'global']['type'] == 'lista':
+            list_value = self.symbols_table[list_name+'global']['value']
+            if len(list_value) > 0:
+                return list_value[-1]
+            else:
+                self.error_on_execution = True
                 raise ValueError("La lista esta vacía, no se puede obtener el último elemento si esta vacía")
         else:
+            self.error_on_execution = True
             raise ValueError('La lista NO existe o NO es una lista')
 
     def visit_primero(self, node):
@@ -574,6 +674,15 @@ class Interpreter(QThread):
             if len(list_value) > 0:
                 return list_value[0]
             else:
+                self.error_on_execution = True
+                raise ValueError("La lista está vacía y así no se puede obtener el primer elemento")
+        elif list_name+'global' in self.symbols_table and self.symbols_table[list_name+'global']['type'] == 'lista':
+            list_value = self.symbols_table[list_name+'global']['value']
+            if len(list_value) > 0:
+                return list_value[0]
+            else:
+                self.error_on_execution = True
                 raise ValueError("La lista está vacía y así no se puede obtener el primer elemento")
         else:
+            self.error_on_execution = True
             raise ValueError('La lista NO existe o NO es una lista')

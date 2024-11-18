@@ -81,8 +81,12 @@ main(){
 
     def conditional_example_handler(self):
         conditional_text = """main(){
-    float alto = 20
-    float ancho = 3
+    float alto 
+    float ancho 
+    escriba("Digite el alto del rectangulo",salto)
+    lea(alto)
+    escriba("Digite el ancho del rectangulo",salto)
+    lea(ancho) 
     si (ancho > alto){
         escriba("El rectangulo es paisa")
     } 
@@ -195,7 +199,7 @@ main() {
     def switch_example_handler(self):
         switch_text ="""main(){
     float temperatura 
-    escriba("A continuacion se le solicita una temperatura de agua para un experimento")
+    escriba("A continuacion se le solicita una temperatura de agua para un experimento",salto)
     lea(temperatura)
     
     casos(temperatura) {
@@ -320,6 +324,7 @@ main() {
             self.ui.TxtSalida.clear()
             try:
                 self.interpreter = Interpreter(self.parser.tree)
+                self.interpreter.error_signal.connect(self.handle_interpreter_error)
                 self.interpreter.request_input.connect(self.handle_input)
                 self.input_ready.connect(self.interpreter.input_ready.emit)
                 self.interpreter.input_type_error.connect(self.handle_input_error)
@@ -347,8 +352,8 @@ main() {
                 self.ui.Txt_Consola.clear()
                 self.ui.Txt_Consola.setReadOnly(True)
                 print(f"Entrada recibida: {self.input_text}")
-                self.input_ready.emit(self.input_text)  # Emite la señal con el texto
-                return True  # Indica que el evento fue manejado
+                self.input_ready.emit(self.input_text)
+                return True
         return super().eventFilter(source, event)
 
     def handle_input_error(self):
@@ -377,14 +382,18 @@ main() {
         self.cursor_codigo.insertText("""lista data-type lista-name = []""")
 
     def handle_output(self):
-        outputs = ''
-        for output in self.interpreter.outputs:
-            outputs += str(output)
-        self.interpreter.outputs = []
-        print('El valor de outputs es', outputs, 'prueba')
-        self.ui.TxtSalida.insertPlainText(outputs)
-        scroll_bar = self.ui.TxtSalida.verticalScrollBar()
-        scroll_bar.setValue(scroll_bar.maximum())
+        if not self.interpreter.error_on_execution:
+            outputs = ''
+            for output in self.interpreter.outputs:
+                outputs += str(output)
+            self.interpreter.outputs = []
+            print('El valor de outputs es', outputs, 'prueba')
+            self.ui.TxtSalida.insertPlainText(outputs)
+            scroll_bar = self.ui.TxtSalida.verticalScrollBar()
+            scroll_bar.setValue(scroll_bar.maximum())
+
+    def handle_interpreter_error(self, error_message):
+        QMessageBox.critical(self, 'Error inesperado en la ejecución ', f"{error_message}")
 
 
 if __name__ == "__main__":

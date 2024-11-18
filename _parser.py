@@ -338,10 +338,13 @@ class Parser:
             value = self.current_token.value
             self.advance()
             return value
-
+        elif self.current_token.type == 'NULL':
+            value = None
+            self.advance()
+            return value
         else:
             raise SyntaxError(
-                f"Se esperaba un IDENTIFIER, NUMBER, STRING, CHAR o BOOLEAN, pero se encontró {self.current_token}")
+                f"Se esperaba un IDENTIFIER, NUMBER, STRING, CHAR, NULL o BOOLEAN, pero se encontró {self.current_token}")
 
     def parse_if_elif(self):
         conditional_type = self.current_token.value

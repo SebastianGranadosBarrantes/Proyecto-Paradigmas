@@ -8,6 +8,7 @@ token_patterns = [
     ('PROCEDURE', r'(?i)\b(procedimienton)\b'),
     ('IO', r'(?i)\b(lea|escriba)\b'),
     ('DATATYPE', r'(?i)\b(entero|char|bool|string|float|pila|lista)\b'),
+    ('NULL', r'(?i)\b(nulo)\b'),
     ('MAIN', r'(?i)\b(main)\b'),
     ('LOGICAL_OPERATOR', r'(?i)\b(and|or|not)\b'),
     ('STACKMETHODS', r'(?i)\b(mete|saca|arriba)\b'),
